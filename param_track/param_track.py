@@ -49,7 +49,7 @@ class Parameters:
         If parameter tracking is used as a parent Class, then this can be redefined for custom behavior, then
         call the _pt_set method to do the actual setting.
 
-        _pt_set checks for internal only variables and handles strict mode and verbosity.
+        _pt_set checks for internal only variables/methods and handles strict mode and verbosity.
 
         """
         self._pt_set(**kwargs)
@@ -59,19 +59,20 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal parameter/method {key} -- ignored.")
-                return
-            if key in self._internal_parset:
+            elif key in self._internal_parset:
                 setattr(self, key, val)
+                if self.ptverbose:
+                    print(f"Resetting parameter {key} as <{type(val).__name__}>:  {val}")
             elif self.ptstrict:
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter {key} in strict mode.")
                 else:
-                    Warning(f"Unknown parameter {key} in strict mode.")
+                    Warning(f"Unknown parameter {key} in strict mode -- ignored.  Use ptadd to add new parameters.")
             else:
                 setattr(self, key, val)
                 self._internal_parset.add(key)
                 if self.ptverbose:
-                    print(f"Setting parameter {key} as '{val}'.")
+                    print(f"Setting parameter {key} as <{type(val).__name__}>:  {val}")
 
     def ptadd(self, **kwargs):
         """
@@ -81,15 +82,15 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
                 Warning(f"Attempt to add internal parameter/method {key} -- ignored.")
-                return
-            setattr(self, key, val)
-            self._internal_parset.add(key)
-            if self.ptverbose:
-                print(f"Adding parameter {key} as '{val}'.")
+            else:
+                setattr(self, key, val)
+                self._internal_parset.add(key)
+                if self.ptverbose:
+                    print(f"Adding parameter {key} as <{type(val).__name__}>:  {val}")
 
     def ptsu(self, **kwargs):
         """
-        This sets parameters with no checking, warnings or errors (except for methods).
+        This sets parameters with no checking, warnings or errors (except for methods) and no verbosity.
 
         This is the only way to set internal parameters if needed.
 
@@ -97,10 +98,10 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal method {key} -- ignored.")
-                continue
-            setattr(self, key, val)
-            if key not in self._internal_parset and key not in self._internal_only_ptvar:
-                self._internal_parset.add(key)
+            else:
+                setattr(self, key, val)
+                if key not in self._internal_only_ptvar:
+                    self._internal_parset.add(key)
 
     def ptshow(self, return_only=False):
         """
@@ -113,9 +114,10 @@ class Parameters:
 
         """
         s = f"Parameter Tracking: {self.ptnote}\n"
+        s += f"ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}\n"
         for key in sorted(self._internal_parset):
             val = getattr(self, key, None)
-            s += f"  {key}: {val}\n"
-        if not return_only:
-            print(s.strip())
-        return s.strip()
+            s += f"  {key} <{type(val).__name__}> : {val}\n"
+        if return_only:
+            return s.strip()
+        print(s.strip())
