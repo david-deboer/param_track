@@ -1,5 +1,9 @@
-class StateVariableError(Exception):
-    """State variable exception handling."""
+class ParameterTrackError(Exception):
+    """Parameter track exception handling."""
     def __init__(self, message):
         self.message = message
-    
+
+
+def Warning(message):
+    """Parameter track warning handling."""
+    print(f"Warning: {message}")
