@@ -1,0 +1,14 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = "param_track"
+version = "1.0.0"
+authors = [{name = "David DeBoer", email="david.r.deboer@gmail.com"}]
+keywords = ["Parameters"]
+license = "MIT"
+readme = "README.md"
+
+[tools.setuptools.packages.find]
+where = ["."]
