@@ -58,21 +58,21 @@ class Parameters:
         """See ptset docstring."""
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                Warning(f"Attempt to set internal parameter/method {key} -- ignored.")
+                Warning(f"Attempt to set internal parameter/method '{key}' -- ignored.")
             elif key in self._internal_parset:
                 setattr(self, key, val)
                 if self.ptverbose:
-                    print(f"Resetting parameter {key} as <{type(val).__name__}>:  {val}")
+                    print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}")
             elif self.ptstrict:
                 if self.pterr:
-                    raise ParameterTrackError(f"Unknown parameter {key} in strict mode.")
+                    raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
-                    Warning(f"Unknown parameter {key} in strict mode -- ignored.  Use ptadd to add new parameters.")
+                    Warning(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.")
             else:
                 setattr(self, key, val)
                 self._internal_parset.add(key)
                 if self.ptverbose:
-                    print(f"Setting parameter {key} as <{type(val).__name__}>:  {val}")
+                    print(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}")
 
     def ptadd(self, **kwargs):
         """
@@ -81,12 +81,12 @@ class Parameters:
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                Warning(f"Attempt to add internal parameter/method {key} -- ignored.")
+                Warning(f"Attempt to add internal parameter/method '{key}' -- ignored.")
             else:
                 setattr(self, key, val)
                 self._internal_parset.add(key)
                 if self.ptverbose:
-                    print(f"Adding parameter {key} as <{type(val).__name__}>:  {val}")
+                    print(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}")
 
     def ptsu(self, **kwargs):
         """
@@ -97,7 +97,7 @@ class Parameters:
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptmethods:
-                Warning(f"Attempt to set internal method {key} -- ignored.")
+                Warning(f"Attempt to set internal method '{key}' -- ignored.")
             else:
                 setattr(self, key, val)
                 if key not in self._internal_only_ptvar:
