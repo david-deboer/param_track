@@ -1,6 +1,8 @@
 # -*- mode: python; coding: utf-8 -*-
 # Copyright 2025 David R DeBoer
 # Licensed under the BSD license. See LICENSE.txt file in the project root for details.
+
+
 """General simple parameter tracking module."""
 from .param_track_error import ParameterTrackError, Warning
 from copy import copy
