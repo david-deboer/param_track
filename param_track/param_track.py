@@ -5,12 +5,8 @@ from copy import copy
 
 class Parameters:
     """
-    General state variable class to keep track of groups of parameters within a class - typically will only use
-    the wrapper functions 'ptset' and 'ptshow'.
-
-    A summary is that this class does 2 things:
-        (1) acts as a gatekeeper depending on the internal parameters (and let's you view them), but primarily...
-        (2) writes the state variables as attributes to this class.
+    General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
+    viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', '_internal_parset'}
@@ -18,8 +14,14 @@ class Parameters:
 
     def __init__(self, ptnote='Parameter tracking', ptstrict=False, pterr=False, ptverbose=True, **kwargs):
         """
-        Initialize the parameter tracking class.
+        General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
+        viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
+        If used as a parent Class, then child Classes can define their own parameters in their __init__ methods
+        before calling the parent Class __init__ method.  If additional checking is needed for specific parameters,
+        then the child Class can override the 'ptset' method to do custom checking, then call the parent Class _pt_set
+        method to do the actual setting.
+        
         Parameters
         ----------
         ptnote : str
@@ -30,6 +32,15 @@ class Parameters:
             Flag to make parameter setting raise ParameterTrackError on unknown parameters in strict mode
         ptverbose : bool
             Flag to make parameter setting verbose
+        kwargs : key, value pairs
+            Initial parameters to set
+            
+        Methods
+        -------
+        ptset : set parameters (with checking)
+        ptadd : add new parameters (only way to add new parameters in strict mode)
+        ptsu : set parameters silently (no checking, warnings or errors)
+        ptshow : show current parameters being tracked
 
         """
         self.ptnote = ptnote
@@ -78,7 +89,14 @@ class Parameters:
 
     def ptadd(self, **kwargs):
         """
-        Add new parameters to the parameter tracking -- only way to add new parameters if ptstrict is True
+        Add new parameters to the parameter tracking -- only way to add new parameters if ptstrict is True.
+
+        If ptstrict is False, then this is equivalent to ptset.
+
+        Parameters
+        ----------
+        kwargs : key, value pairs
+            Parameters to add
 
         """
         for key, val in kwargs.items():
@@ -96,6 +114,11 @@ class Parameters:
 
         This is the only way to set internal parameters if needed.
 
+        Parameters
+        ----------
+        kwargs : key, value pairs
+            Parameters to set in superuser mode
+
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptmethods:
@@ -108,6 +131,11 @@ class Parameters:
     def ptshow(self, return_only=False):
         """
         Show the current parameters being tracked.
+
+        Parameters
+        ----------
+        return_only : bool
+            If True, then return the string instead of printing it (for __repr__ method)
 
         Returns
         -------
