@@ -1,5 +1,6 @@
 """General simple parameter tracking module."""
 from .param_track_error import ParameterTrackError, Warning
+from copy import copy
 
 
 class Parameters:
@@ -60,9 +61,10 @@ class Parameters:
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal parameter/method '{key}' -- ignored.")
             elif key in self._internal_parset:
+                oldval = copy(getattr(self, key))
                 setattr(self, key, val)
                 if self.ptverbose:
-                    print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}")
+                    print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]")
             elif self.ptstrict:
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
