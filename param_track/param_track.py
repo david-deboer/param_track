@@ -148,6 +148,11 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal method '{key}' -- ignored.")
+            elif key in self._internal_only_ptvar:
+                if type(val) != bool:
+                    Warning(f"Internal parameter '{key}' should be bool -- ignored.")
+                else:
+                    setattr(self, key, val)
             else:
                 setattr(self, key, val)
                 if key not in self._internal_only_ptvar:
