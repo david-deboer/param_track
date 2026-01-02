@@ -17,7 +17,7 @@ class Parameters:
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', '_internal_parset'}
     _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptadd', 'ptshow', 'ptsu'}
 
-    def __init__(self, ptnote='Parameter tracking', ptstrict=False, pterr=False, ptverbose=True, **kwargs):
+    def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
         viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.

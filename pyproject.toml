@@ -4,14 +4,11 @@ build-backend = 'setuptools.build_meta'
 
 [project]
 name = "param_track"
-dynamic = ["version"]
 authors = [{name = "David DeBoer", email="david.r.deboer@gmail.com"}]
+version = "1.0.0"
 keywords = ["Parameters"]
 license = "MIT"
 readme = "README.md"
 
 [tools.setuptools.packages.find]
 where = ["."]
-
-[tool.setuptools.dynamic]
-version = {attr = "param_track.__version__"}

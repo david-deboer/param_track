@@ -5,6 +5,6 @@
 
 """A simple parameter tracking class"""
 
-from . import param_track
-
-__version__ = "1.0.0"
+from .param_track import Parameters
+from importlib.metadata import version
+__version__ = version('param_track')
