@@ -14,10 +14,10 @@ class Parameters:
     viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
     """
-    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', '_internal_parset'}
+    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pytype', '_internal_parset'}
     _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptadd', 'ptshow', 'ptsu'}
 
-    def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, **kwargs):
+    def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
         viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
@@ -37,6 +37,11 @@ class Parameters:
             Flag to make parameter setting raise ParameterTrackError on unknown parameters in strict mode
         ptverbose : bool
             Flag to make parameter setting verbose
+        pttype : bool
+            Flag to check parameter reset type -- only used in ptset and only provides warnings.
+            Checks relative to the initial type set or when ptadd/ptsu was used.
+        pttypeerr : bool
+            Flag to make parameter setting raise ParameterTrackError on type change or just warning -- only used in ptset.
         kwargs : key, value pairs
             Initial parameters to set
             
@@ -52,7 +57,9 @@ class Parameters:
         self.ptstrict = False  # This is initially set to False to allow setting in ptset on initialization
         self.pterr = pterr
         self.ptverbose = ptverbose
-        self._internal_parset = set()
+        self.pttype = pttype
+        self.pttypeerr = pttypeerr
+        self._internal_parset = {}
         self.ptset(**kwargs)
         self.ptstrict = ptstrict
 
@@ -76,19 +83,30 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal parameter/method '{key}' -- ignored.")
-            elif key in self._internal_parset:
+            elif key in self._internal_parset:  # It has a history, so check type.
                 oldval = copy(getattr(self, key))
                 setattr(self, key, val)
+                ptype = self._internal_parset[key].__name__
                 if self.ptverbose:
                     print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]")
-            elif self.ptstrict:
+                if type(val) != self._internal_parset[key]:
+                    if self.pttype:
+                        if self.pttypeerr:
+                            raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
+                        else:
+                            Warning(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>")
+                    else:
+                        self._internal_parset[key] = type(val)
+                        if self.ptverbose:
+                            print(f"Parameter '{key}' type updated to <{type(val).__name__}>")
+            elif self.ptstrict:  # It is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
                     Warning(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.")
-            else:
+            else:  # New parameter not in strict mode so just set it.
                 setattr(self, key, val)
-                self._internal_parset.add(key)
+                self._internal_parset[key] = type(val)
                 if self.ptverbose:
                     print(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}")
 
@@ -96,7 +114,8 @@ class Parameters:
         """
         Add new parameters to the parameter tracking -- only way to add new parameters if ptstrict is True.
 
-        If ptstrict is False, then this is equivalent to ptset.
+        If ptstrict is False, then this is equivalent to ptset except that type checking is ignored and there are fewer
+        messages.  It will reset the parameter type to new value type.
 
         Parameters
         ----------
@@ -109,7 +128,7 @@ class Parameters:
                 Warning(f"Attempt to add internal parameter/method '{key}' -- ignored.")
             else:
                 setattr(self, key, val)
-                self._internal_parset.add(key)
+                self._internal_parset[key] = type(val)
                 if self.ptverbose:
                     print(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}")
 
@@ -117,7 +136,8 @@ class Parameters:
         """
         This sets parameters with no checking, warnings or errors (except for methods) and no verbosity.
 
-        This is the only way to set internal parameters if needed.
+        This is the only way to set internal parameters if needed.  Same at ptadd except that existing parameters
+        can be reset and there are no warnings or errors, except for methods.
 
         Parameters
         ----------
@@ -131,7 +151,7 @@ class Parameters:
             else:
                 setattr(self, key, val)
                 if key not in self._internal_only_ptvar:
-                    self._internal_parset.add(key)
+                    self._internal_parset[key] = type(val)
 
     def ptshow(self, return_only=False):
         """
@@ -149,7 +169,7 @@ class Parameters:
 
         """
         s = f"Parameter Tracking: {self.ptnote}\n"
-        s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose})\n"
+        s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype})\n"
         for key in sorted(self._internal_parset):
             val = getattr(self, key, None)
             s += f"  {key} <{type(val).__name__}> : {val}\n"
