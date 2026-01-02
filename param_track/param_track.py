@@ -174,7 +174,7 @@ class Parameters:
 
         """
         s = f"Parameter Tracking: {self.ptnote}\n"
-        s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype})\n"
+        s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
         for key in sorted(self._internal_parset):
             val = getattr(self, key, None)
             s += f"  {key} <{type(val).__name__}> : {val}\n"

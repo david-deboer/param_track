@@ -19,7 +19,7 @@ and may be viewed via:
 ```
 >>> mypar.ptshow()
 Parameter Tracking: These are my parameters
-(ptstrict: True, pterr: False, ptverbose: True, pttype: False)
+(ptstrict: True, pterr: False, ptverbose: True, pttype: False, pttypeerr: False)
   par1 <str> : Hello World!
 ```
 
@@ -40,6 +40,8 @@ The arguments of `Parameters` are:
         pttype : bool
             Flag to check parameter reset type -- only used in ptset and only provides warnings.
             Checks relative to the initial type set or when ptadd/ptsu was used.
+        pttypeerr : bool
+            Flag to make parameter setting raise ParameterTrackError on type change or just warning -- only used in ptset.
         kwargs : key, value pairs
             Initial parameters to set
             
