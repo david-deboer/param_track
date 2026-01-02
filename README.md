@@ -2,6 +2,12 @@
 
 General parameter tracking class to keep track of groups of parameters within a class with some minor checking and viewing - typically will only use the wrapper functions `ptset` and `ptshow`.
 
+Installed as:
+
+```
+pip install https://github.com/david-deboer/param_track
+```
+
 To use, include the import:
 
 ```from param_track import Parameters```
