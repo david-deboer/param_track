@@ -14,7 +14,7 @@ class Parameters:
     viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
     """
-    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pytype', '_internal_parset'}
+    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', '_internal_parset'}
     _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptadd', 'ptshow', 'ptsu'}
 
     def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
