@@ -14,7 +14,7 @@ class Parameters:
     viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
     """
-    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', '_internal_parset'}
+    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
     _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptadd', 'ptshow', 'ptsu'}
 
     def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
@@ -59,7 +59,7 @@ class Parameters:
         self.ptverbose = ptverbose
         self.pttype = pttype
         self.pttypeerr = pttypeerr
-        self._internal_parset = {}
+        self._internal_pardict = {}
         self.ptset(**kwargs)
         self.ptstrict = ptstrict
 
@@ -83,20 +83,20 @@ class Parameters:
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
                 Warning(f"Attempt to set internal parameter/method '{key}' -- ignored.")
-            elif key in self._internal_parset:  # It has a history, so check type.
+            elif key in self._internal_pardict:  # It has a history, so check type.
                 oldval = copy(getattr(self, key))
                 setattr(self, key, val)
-                ptype = self._internal_parset[key].__name__
+                ptype = self._internal_pardict[key].__name__
                 if self.ptverbose:
                     print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]")
-                if type(val) != self._internal_parset[key]:
+                if type(val) != self._internal_pardict[key]:
                     if self.pttype:
                         if self.pttypeerr:
                             raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
                         else:
                             Warning(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>")
                     else:
-                        self._internal_parset[key] = type(val)
+                        self._internal_pardict[key] = type(val)
                         if self.ptverbose:
                             print(f"Parameter '{key}' type updated to <{type(val).__name__}>")
             elif self.ptstrict:  # It is unknown and strict mode is on.
@@ -106,7 +106,7 @@ class Parameters:
                     Warning(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.")
             else:  # New parameter not in strict mode so just set it.
                 setattr(self, key, val)
-                self._internal_parset[key] = type(val)
+                self._internal_pardict[key] = type(val)
                 if self.ptverbose:
                     print(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}")
 
@@ -128,7 +128,7 @@ class Parameters:
                 Warning(f"Attempt to add internal parameter/method '{key}' -- ignored.")
             else:
                 setattr(self, key, val)
-                self._internal_parset[key] = type(val)
+                self._internal_pardict[key] = type(val)
                 if self.ptverbose:
                     print(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}")
 
@@ -156,7 +156,7 @@ class Parameters:
             else:
                 setattr(self, key, val)
                 if key not in self._internal_only_ptvar:
-                    self._internal_parset[key] = type(val)
+                    self._internal_pardict[key] = type(val)
 
     def ptshow(self, return_only=False):
         """
@@ -175,7 +175,7 @@ class Parameters:
         """
         s = f"Parameter Tracking: {self.ptnote}\n"
         s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
-        for key in sorted(self._internal_parset):
+        for key in sorted(self._internal_pardict.keys()):
             val = getattr(self, key, None)
             s += f"  {key} <{type(val).__name__}> : {val}\n"
         if return_only:
