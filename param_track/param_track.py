@@ -113,12 +113,12 @@ class Parameters:
                 if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
                     self._internal_pardict[key] = type(val)
                 elif type(val) != self._internal_pardict[key]:
-                    if self.pttype:
+                    if self.pttype:  # Types don't match and I care about types.
                         if self.pttypeerr:
                             raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
                         else:
                             Warning(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>")
-                    else:
+                    else:  # Types don't match but I don't care about types.
                         self._internal_pardict[key] = type(val)
                         if self.ptverbose:
                             print(f"Parameter '{key}' type updated to <{type(val).__name__}>")
