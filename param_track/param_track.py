@@ -48,12 +48,14 @@ class Parameters:
         Methods
         -------
         ptset : set parameters (with checking)
+        ptinit : initialize parameters from a list of keys
         ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
         ptsu : set parameters silently (no checking, warnings or errors)
         ptshow : show current parameters being tracked
 
         """
+        self._internal_self_type = type(self)
         self.ptnote = ptnote
         self.ptstrict = False  # This is initially set to False to allow setting in ptset on initialization
         self.pterr = pterr
@@ -66,6 +68,24 @@ class Parameters:
 
     def __repr__(self):
         return self.ptshow(return_only=True)
+
+    def ptinit(self, param_list, default=None):
+        """
+        Initialize parameters to 'default' from a list of keys.
+
+        If initialized this way, the type is then set when first set via ptset, ptadd or ptsu.
+
+        Parameters
+        ----------
+        param_list : list of str
+            List of keys to initialize parameters
+        default : any
+            Default value to set for each parameter (default is None)
+
+        """
+        for key in param_list:
+            setattr(self, key, default)
+            self._internal_pardict[key] = self._internal_self_type
 
     def ptset(self, **kwargs):
         """
@@ -90,7 +110,9 @@ class Parameters:
                 ptype = self._internal_pardict[key].__name__
                 if self.ptverbose:
                     print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]")
-                if type(val) != self._internal_pardict[key]:
+                if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
+                    self._internal_pardict[key] = type(val)
+                elif type(val) != self._internal_pardict[key]:
                     if self.pttype:
                         if self.pttypeerr:
                             raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
