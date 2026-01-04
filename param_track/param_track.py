@@ -15,7 +15,7 @@ class Parameters:
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
-    _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptadd', 'ptshow', 'ptsu'}
+    _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu'}
 
     def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
@@ -48,6 +48,7 @@ class Parameters:
         Methods
         -------
         ptset : set parameters (with checking)
+        ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
         ptsu : set parameters silently (no checking, warnings or errors)
         ptshow : show current parameters being tracked
@@ -109,6 +110,26 @@ class Parameters:
                 self._internal_pardict[key] = type(val)
                 if self.ptverbose:
                     print(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}")
+
+    def ptget(self, key, default=None, raise_err=False):
+        """
+        Get the value of a parameter.
+
+        Parameters
+        ----------
+        key : str
+            Parameter name to get
+        default : any
+            Default value to return if parameter not found (if raise_err is False)
+        raise_err : bool
+            If True, then raise ParameterTrackError if parameter not found
+        
+        """
+        if hasattr(self, key):
+            return getattr(self, key)
+        if raise_err:
+            raise ParameterTrackError(f"Parameter '{key}' not found.")
+        return default
 
     def ptadd(self, **kwargs):
         """
