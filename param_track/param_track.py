@@ -20,7 +20,7 @@ class Parameters:
     def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
-        viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
+        viewing - typically will only use the methods 'ptset', 'ptget' and 'ptshow'.
 
         If used as a parent Class, then child Classes can define their own parameters in their __init__ methods
         before calling the parent Class __init__ method.  If additional checking is needed for specific parameters,
