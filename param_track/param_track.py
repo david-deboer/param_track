@@ -15,7 +15,7 @@ class Parameters:
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
-    _internal_only_ptmethods = {'_pt_set', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu'}
+    _internal_only_ptmethods = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'pt_to_dict'}
 
     def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
@@ -122,7 +122,7 @@ class Parameters:
                         self._internal_pardict[key] = type(val)
                         if self.ptverbose:
                             print(f"Parameter '{key}' type updated to <{type(val).__name__}>")
-            elif self.ptstrict:  # It is unknown and strict mode is on.
+            elif self.ptstrict:  # Key is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
@@ -224,3 +224,18 @@ class Parameters:
         if return_only:
             return s.strip()
         print(s.strip())
+
+    def pt_to_dict(self):
+        """
+        Return the current parameters as a dictionary.
+
+        Returns
+        -------
+        dict
+            Dictionary of current parameters
+
+        """
+        rec = {}
+        for key in self._internal_pardict.keys():
+            rec[key] = copy(getattr(self, key))
+        return rec
