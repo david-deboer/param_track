@@ -51,7 +51,7 @@ class Parameters:
         ptinit : initialize parameters from a list of keys
         ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
-        ptsu : set parameters silently (no checking, warnings or errors)
+        ptsu : set parameters silently and can change internal parameters listed above (no checking, warnings or errors)
         ptshow : show current parameters being tracked
 
         """
