@@ -57,14 +57,13 @@ class Parameters:
         """
         self._internal_self_type = type(self)
         self.ptnote = ptnote
-        self.ptstrict = False  # This is initially set to False to allow setting in ptset on initialization
+        self.ptstrict = ptstrict
         self.pterr = pterr
         self.ptverbose = ptverbose
         self.pttype = pttype
         self.pttypeerr = pttypeerr
         self._internal_pardict = {}
-        self.ptset(**kwargs)
-        self.ptstrict = ptstrict
+        self.ptadd(**kwargs)
 
     def __repr__(self):
         return self.ptshow(return_only=True)
@@ -225,9 +224,16 @@ class Parameters:
             return s.strip()
         print(s.strip())
 
-    def pt_to_dict(self):
+    def pt_to_dict(self, serialize=None):
         """
         Return the current parameters as a dictionary.
+
+        Parameters
+        ----------
+        serialize : str or None
+            If 'json', then return JSON serialized string
+            If 'pickle', then return pickle serialized bytes
+            If None, then return dictionary
 
         Returns
         -------
@@ -238,4 +244,11 @@ class Parameters:
         rec = {}
         for key in self._internal_pardict.keys():
             rec[key] = copy(getattr(self, key))
+        if serialize is not None:
+            if serialize == 'json':
+                import json
+                return json.dumps(rec)
+            elif serialize == 'pickle':
+                import pickle
+                return pickle.dumps(rec)
         return rec
