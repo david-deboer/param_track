@@ -20,7 +20,7 @@ class Parameters:
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
     _internal_only_ptmethods = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'pt_to_dict'}
 
-    def __init__(self, ptnote='Parameter tracking', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
+    def __init__(self, ptnote='Parameter tracker', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
         viewing - typically will only use the methods 'ptset', 'ptget' and 'ptshow'.
@@ -59,6 +59,7 @@ class Parameters:
 
         """
         self._internal_self_type = type(self)
+        _notice.post(f"Initializing Parameters: {ptnote}.", silent=True)
         self.ptnote = ptnote
         self.ptstrict = ptstrict
         self.pterr = pterr
