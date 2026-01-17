@@ -4,8 +4,11 @@
 
 
 """General simple parameter tracking module."""
-from .param_track_error import ParameterTrackError, Warning
+from .param_track_error import ParameterTrackError, Notices
 from copy import copy
+
+
+_notice = Notices()
 
 
 class Parameters:
@@ -38,10 +41,10 @@ class Parameters:
         ptverbose : bool
             Flag to make parameter setting verbose
         pttype : bool
-            Flag to check parameter reset type -- only used in ptset and only provides warnings.
+            Flag to check parameter reset type -- only used in ptset and only provides notices.
             Checks relative to the initial type set or when ptadd/ptsu was used.
         pttypeerr : bool
-            Flag to make parameter setting raise ParameterTrackError on type change or just warning -- only used in ptset.
+            Flag to make parameter setting raise ParameterTrackError on type change or just notice -- only used in ptset.
         kwargs : key, value pairs
             Initial parameters to set
             
@@ -51,7 +54,7 @@ class Parameters:
         ptinit : initialize parameters from a list of keys
         ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
-        ptsu : set parameters silently and can change internal parameters listed above (no checking, warnings or errors)
+        ptsu : set parameters silently and can change internal parameters listed above (no checking, notices or errors)
         ptshow : show current parameters being tracked
 
         """
@@ -85,6 +88,7 @@ class Parameters:
         for key in param_list:
             setattr(self, key, default)
             self._internal_pardict[key] = self._internal_self_type
+            _notice.post(f"Initializing parameter '{key}' to {default}", silent=not self.ptverbose)
 
     def ptset(self, **kwargs):
         """
@@ -102,13 +106,12 @@ class Parameters:
         """See ptset docstring."""
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                Warning(f"Attempt to set internal parameter/method '{key}' -- ignored.")
+                _notice.post(f"Attempt to set internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # It has a history, so check type.
                 oldval = copy(getattr(self, key))
                 setattr(self, key, val)
                 ptype = self._internal_pardict[key].__name__
-                if self.ptverbose:
-                    print(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]")
+                _notice.post(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]", silent=not self.ptverbose)
                 if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
                     self._internal_pardict[key] = type(val)
                 elif type(val) != self._internal_pardict[key]:
@@ -116,21 +119,19 @@ class Parameters:
                         if self.pttypeerr:
                             raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
                         else:
-                            Warning(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>")
+                            _notice.post(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>", silent=False)
                     else:  # Types don't match but I don't care about types.
                         self._internal_pardict[key] = type(val)
-                        if self.ptverbose:
-                            print(f"Parameter '{key}' type updated to <{type(val).__name__}>")
+                        _notice.post(f"Parameter '{key}' type updated to <{type(val).__name__}>", silent=not self.ptverbose)
             elif self.ptstrict:  # Key is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
-                    Warning(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.")
+                    _notice.post(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.", silent=False)  # always print 'ignored'
             else:  # New parameter not in strict mode so just set it.
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
-                if self.ptverbose:
-                    print(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}")
+                _notice.post(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
 
     def ptget(self, key, default=None, raise_err=False):
         """
@@ -167,19 +168,18 @@ class Parameters:
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                Warning(f"Attempt to add internal parameter/method '{key}' -- ignored.")
+                _notice.post(f"Attempt to add internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             else:
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
-                if self.ptverbose:
-                    print(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}")
+                _notice.post(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
 
     def ptsu(self, **kwargs):
         """
-        This sets parameters with no checking, warnings or errors (except for methods) and no verbosity.
+        This sets parameters with little checking and no errors.
 
-        This is the only way to set internal parameters if needed.  Same at ptadd except that existing parameters
-        can be reset and there are no warnings or errors, except for methods.
+        This is the only way to set internal parameters if needed.  Same as ptadd except that existing parameters
+        can be reset and there are no notices or errors, except for methods.
 
         Parameters
         ----------
@@ -189,10 +189,10 @@ class Parameters:
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptmethods:
-                Warning(f"Attempt to set internal method '{key}' -- ignored.")
+                _notice.post(f"Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar:
                 if type(val) != bool:
-                    Warning(f"Internal parameter '{key}' should be bool -- ignored.")
+                    _notice.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
                 else:
                     setattr(self, key, val)
             else:
@@ -200,21 +200,31 @@ class Parameters:
                 if key not in self._internal_only_ptvar:
                     self._internal_pardict[key] = type(val)
 
-    def ptshow(self, return_only=False):
+    def ptshow(self, return_only=False, notices=False):
         """
         Show the current parameters being tracked.
 
         Parameters
         ----------
         return_only : bool
-            If True, then return the string instead of printing it (for __repr__ method)
+            If True and not 'notices', then return the string instead of printing it (for __repr__ method)
+            If True and 'notices', then return the Notices object
+            If False, then print the string representation and if 'notices' then also print the notices
+        notices : bool
+            If True and not 'return_only' then print the notices after the parameters.
+            If True and 'return_only' then return the Notices object.
 
         Returns
         -------
-        str
+        if 'return_only' and not 'notices' : str
             String representation of the current parameters
+        if 'return_only' and 'notices' : Notices
+            Notices object with all notices posted
+        if not 'return_only' : None
 
         """
+        if notices and return_only:
+            return _notice
         s = f"Parameter Tracking: {self.ptnote}\n"
         s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
         for key in sorted(self._internal_pardict.keys()):
@@ -222,8 +232,13 @@ class Parameters:
             s += f"  {key} <{type(val).__name__}> : {val}\n"
         if return_only:
             return s.strip()
-        print(s.strip())
-
+        print(s)
+        if notices:
+            print("\nAll Notices:")
+            print("-------------")
+            for anotice in _notice.notices:
+                print(f"  [{anotice.time}] {anotice.message}")   
+    
     def pt_to_dict(self, serialize=None):
         """
         Return the current parameters as a dictionary.
