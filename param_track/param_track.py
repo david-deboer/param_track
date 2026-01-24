@@ -18,7 +18,7 @@ class Parameters:
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
-    _internal_only_ptmethods = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'pt_to_dict'}
+    _internal_only_ptmethods = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'pt_to_dict', 'pt_to_csv'}
 
     def __init__(self, ptnote='Parameter tracker', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
@@ -268,3 +268,27 @@ class Parameters:
                 import pickle
                 return pickle.dumps(rec)
         return rec
+    
+    def pt_to_csv(self):
+        """
+        Return the current parameters as a CSV string.
+
+        Returns
+        -------
+        str
+            CSV string of current parameters
+
+        """
+        import csv
+        import io
+        
+        row = self.pt_to_dict()
+        fieldnames = list(row.keys())
+
+        buf = io.StringIO()
+        writer = csv.DictWriter(
+            buf,
+            fieldnames=fieldnames
+        )
+        writer.writerow(row)
+        return buf.getvalue()
