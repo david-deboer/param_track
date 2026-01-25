@@ -48,16 +48,20 @@ class Parameters:
         pttypeerr : bool
             Flag to make parameter setting raise ParameterTrackError on type change or just notice -- only used in ptset.
         kwargs : key, value pairs
-            Initial parameters to set
+            Initial parameters to set (if any)
             
         Methods
         -------
         ptset : set parameters (with checking)
-        ptinit : initialize parameters from a list of keys
+        ptinit : initialize parameters from a list of keys to default value (don't set type yet)
         ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
         ptsu : set parameters silently and can change internal parameters listed above (no checking, notices or errors)
         ptshow : show current parameters being tracked
+        ptnotices : show or return the Notices object
+        pt_to_dict : return current parameters as a dictionary (or serialized form)
+        pt_to_csv : return current parameters as a CSV string
+        pt_from : set parameters from a file (CSV, JSON or YAML formats supported)
 
         """
         self._internal_self_type = type(self)
