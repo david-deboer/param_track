@@ -251,7 +251,7 @@ class Parameters:
         Parameters
         ----------
         return_only : bool
-            If True, then return the Notices object and doesn't print anything.
+            If True, then return the Notices object and don't print anything.
 
         """
         if return_only:
@@ -303,13 +303,13 @@ class Parameters:
             return pickle.dumps(rec)
         return rec
     
-    def _internal_par_to_dict(self, serialize='json'):
+    def _internal_par_to_dict(self, serialize=None):
         """
         Internal method to return the current internal parameters.
 
         Parameters
         ----------
-        serialize : str
+        serialize : str or None
             If 'json', then return JSON serialized string
             If 'yaml', then return YAML serialized string
             If None, then return dictionary
