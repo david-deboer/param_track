@@ -8,7 +8,7 @@ from .param_track_error import ParameterTrackError, Notices
 from copy import copy
 
 
-_notice = Notices()
+__notice__ = Notices()
 
 
 class Parameters:
@@ -17,8 +17,10 @@ class Parameters:
     viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
 
     """
-    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr'}
-    _internal_only_ptmethods = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'pt_to_dict', 'pt_to_csv'}
+    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr',
+                            '_internal_self_type', '_internal_pardict'}
+    _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu',
+                            'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
 
     def __init__(self, ptnote='Parameter tracker', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
@@ -59,7 +61,7 @@ class Parameters:
 
         """
         self._internal_self_type = type(self)
-        _notice.post(f"Initializing Parameters: {ptnote}.", silent=True)
+        __notice__.post(f"Initializing Parameters: {ptnote}.", silent=True)
         self.ptnote = ptnote
         self.ptstrict = ptstrict
         self.pterr = pterr
@@ -89,7 +91,7 @@ class Parameters:
         for key in param_list:
             setattr(self, key, default)
             self._internal_pardict[key] = self._internal_self_type
-            _notice.post(f"Initializing parameter '{key}' to {default}", silent=not self.ptverbose)
+            __notice__.post(f"Initializing parameter '{key}' to {default}", silent=not self.ptverbose)
 
     def ptset(self, **kwargs):
         """
@@ -106,13 +108,13 @@ class Parameters:
     def _pt_set(self, **kwargs):
         """See ptset docstring."""
         for key, val in kwargs.items():
-            if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                _notice.post(f"Attempt to set internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
+            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
+                __notice__.post(f"Attempt to set internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # It has a history, so check type.
                 oldval = copy(getattr(self, key))
                 setattr(self, key, val)
                 ptype = self._internal_pardict[key].__name__
-                _notice.post(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]", silent=not self.ptverbose)
+                __notice__.post(f"Resetting parameter '{key}' as <{type(val).__name__}>:  {val}     [previous value <{type(oldval).__name__}>: {oldval}]", silent=not self.ptverbose)
                 if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
                     self._internal_pardict[key] = type(val)
                 elif type(val) != self._internal_pardict[key]:
@@ -120,19 +122,19 @@ class Parameters:
                         if self.pttypeerr:
                             raise ParameterTrackError(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}>")
                         else:
-                            _notice.post(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>", silent=False)
+                            __notice__.post(f"Parameter '{key}' reset with different type: <{ptype}> to <{type(val).__name__}> -- retaining <{ptype}>", silent=False)
                     else:  # Types don't match but I don't care about types.
                         self._internal_pardict[key] = type(val)
-                        _notice.post(f"Parameter '{key}' type updated to <{type(val).__name__}>", silent=not self.ptverbose)
+                        __notice__.post(f"Parameter '{key}' type updated to <{type(val).__name__}>", silent=not self.ptverbose)
             elif self.ptstrict:  # Key is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
-                    _notice.post(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.", silent=False)  # always print 'ignored'
+                    __notice__.post(f"Unknown parameter '{key}' in strict mode -- ignored.  Use ptadd to add new parameters.", silent=False)  # always print 'ignored'
             else:  # New parameter not in strict mode so just set it.
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
-                _notice.post(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
+                __notice__.post(f"Setting parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
 
     def ptget(self, key, default=None, raise_err=False):
         """
@@ -168,19 +170,20 @@ class Parameters:
 
         """
         for key, val in kwargs.items():
-            if key in self._internal_only_ptvar or key in self._internal_only_ptmethods:
-                _notice.post(f"Attempt to add internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
+            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
+                __notice__.post(f"Attempt to add internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             else:
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
-                _notice.post(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
+                __notice__.post(f"Adding parameter '{key}' as <{type(val).__name__}>:  {val}", silent=not self.ptverbose)
 
     def ptsu(self, **kwargs):
         """
         This sets parameters with little checking and no errors.
 
         This is the only way to set internal parameters if needed.  Same as ptadd except that existing parameters
-        can be reset and there are no notices or errors, except for methods.
+        can be reset and there are no notices or errors, except for methods.  Also, it will only set parameter type if not
+        already defined.
 
         Parameters
         ----------
@@ -189,11 +192,11 @@ class Parameters:
 
         """
         for key, val in kwargs.items():
-            if key in self._internal_only_ptmethods:
-                _notice.post(f"Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
+            if key in self._internal_only_ptdef:
+                __notice__.post(f"Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar:
                 if type(val) != bool:
-                    _notice.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
+                    __notice__.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
                 else:
                     setattr(self, key, val)
             else:
@@ -225,7 +228,7 @@ class Parameters:
 
         """
         if notices and return_only:
-            return _notice
+            return __notice__
         s = f"Parameter Tracking: {self.ptnote}\n"
         s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
         for key in sorted(self._internal_pardict.keys()):
@@ -237,10 +240,10 @@ class Parameters:
         if notices:
             print("\nAll Notices:")
             print("-------------")
-            for anotice in _notice.notices:
+            for anotice in __notice__.notices:
                 print(f"  [{anotice.time}] {anotice.message}")   
     
-    def pt_to_dict(self, serialize=None):
+    def pt_to_dict(self, serialize=None, include_par=None):
         """
         Return the current parameters as a dictionary.
 
@@ -250,16 +253,19 @@ class Parameters:
             If 'json', then return JSON serialized string
             If 'pickle', then return pickle serialized bytes
             If None, then return dictionary
+        include_par : list of str or None
+            If not None, then only include these parameters in the output dictionary
 
         Returns
         -------
-        dict
-            Dictionary of current parameters
+        dict, str, or bytes
+            Dictionary or serialized form of current parameters
 
         """
         from datetime import datetime
         rec = {}
-        for key in self._internal_pardict.keys():
+        pars2use = self._internal_pardict.keys() if include_par is None else include_par
+        for key in pars2use:
             val = copy(getattr(self, key))
             if serialize == 'json':
                 if isinstance(val, datetime):
@@ -274,9 +280,18 @@ class Parameters:
                 return pickle.dumps(rec)
         return rec
     
-    def pt_to_csv(self):
+    def pt_to_csv(self, include_par=None, as_row=False, include_header=False):
         """
         Return the current parameters as a CSV string.
+
+        Parameters
+        ----------
+        include_par : list of str or None
+            If not None, then only include these parameters in the CSV output
+        as_row : bool
+            If True, then return the CSV as a single row instead of key-value pairs
+        include_header : bool
+            If True include the header row
 
         Returns
         -------
@@ -288,13 +303,77 @@ class Parameters:
         import io
         import json
         
-        this = self.pt_to_dict(serialize='json')
+        this = self.pt_to_dict(serialize='json', include_par=include_par)
 
         buf = io.StringIO()
         writer = csv.writer(buf)
-        rows = []
-        for key, val in json.loads(this).items():
-            rows.append([key, val])
-        writer.writerows(rows)
+
+        if as_row:
+            if include_header:
+                writer.writerow([key for key, val in json.loads(this).items()])
+            writer.writerow([val for key, val in json.loads(this).items()])
+        else:
+            if include_header:
+                writer.writerow(['parameter', 'value'])
+            writer.writerows([[key, val] for key, val in json.loads(this).items()])
 
         return buf.getvalue()
+    
+    def pt_from(self, filename, use_add=False, as_row=False):
+        """
+        Set parameters from a file, depending on tthe format of the file per tag.
+
+        Currently csv, json and yaml formats are supported.
+    
+        Parameters
+        ----------
+        filename : str
+            Path to the file containing parameters
+        use_add : bool
+            If True, then use ptadd to add parameters instead of ptset
+        as_row : False or int (CSV format only)
+            If int, then read the CSV from row 'as_row' instead of key-value pairs
+            and first line is header (works since row 0 is header)
+
+        """
+        __notice__.post(f"{'Adding' if use_add else 'Setting'} parameters from {filename}", silent=not self.ptverbose)
+        if filename.endswith('.csv'):
+            self._pt_from_csv(filename, as_row=as_row, use_add=use_add)
+        elif filename.endswith('.json'):
+            import json
+            with open(filename, 'r') as fp:
+                data = json.load(fp)
+            using = self.ptadd if use_add else self.ptset
+            using(**data)
+        elif filename.endswith('.yaml') or filename.endswith('.yml'):
+            import yaml
+            with open(filename, 'r') as fp:
+                data = yaml.safe_load(fp)
+            using = self.ptadd if use_add else self.ptset
+            using(**data)
+        else:
+            raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+
+    def _pt_from_csv(self, filename, use_add=False, as_row=False):
+        """Set parameters from a CSV file (see pt_from)."""
+        import csv
+        if as_row:
+            as_row = int(as_row)
+            __notice__.post(f"{'Adding' if use_add else 'Setting'} from row {as_row}", silent=not self.ptverbose)
+        using = self.ptadd if use_add else self.ptset
+        with open(filename, 'r') as fp:
+            reader = csv.reader(fp)
+            if as_row:
+                keys = next(reader)
+            for i, row in enumerate(reader):
+                if as_row:
+                    if i != as_row-1:
+                        continue
+                    for key, val in zip(keys, row):
+                        using(**{key: val})
+                    break
+                else:
+                    if len(row) != 2:
+                        continue
+                    key, val = row
+                    using(**{key: val})
