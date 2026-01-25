@@ -194,6 +194,7 @@ class Parameters:
         for key, val in kwargs.items():
             if key == 'ptnote':
                 setattr(self, key, val)
+                __notice__.post(f"Setting internal parameter '{key}' to {val}", silent=True)
             elif key in self._internal_only_ptdef:
                 __notice__.post(f"Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar:
@@ -204,10 +205,13 @@ class Parameters:
                         __notice__.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
                     else:
                         setattr(self, key, val)
+                        __notice__.post(f"Setting internal parameter '{key}' to {val}", silent=True)
             else:
                 setattr(self, key, val)
+                __notice__.post(f"Superuser setting parameter '{key}' to {val}", silent=True)
                 if key not in self._internal_only_ptvar:
                     self._internal_pardict[key] = type(val)
+                    __notice__.post(f"Parameter '{key}' type set to <{type(val).__name__}>", silent=True)
 
     def ptshow(self, return_only=False, vals_only=False, include_par=None):
         """
