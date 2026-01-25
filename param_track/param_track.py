@@ -204,7 +204,7 @@ class Parameters:
                 if key not in self._internal_only_ptvar:
                     self._internal_pardict[key] = type(val)
 
-    def ptshow(self, return_only=False, notices=False):
+    def ptshow(self, return_only=False, notices=False, include_par=None):
         """
         Show the current parameters being tracked.
 
@@ -217,11 +217,13 @@ class Parameters:
         notices : bool
             If True and not 'return_only' then print the notices after the parameters.
             If True and 'return_only' then return the Notices object.
+        include_par : list of str or None
+            If not None, then only include these parameters in the output
 
         Returns
         -------
         if 'return_only' and not 'notices' : str
-            String representation of the current parameters
+            JSON string representation of the current parameters
         if 'return_only' and 'notices' : Notices
             Notices object with all notices posted
         if not 'return_only' : None
@@ -229,14 +231,12 @@ class Parameters:
         """
         if notices and return_only:
             return __notice__
-        s = f"Parameter Tracking: {self.ptnote}\n"
-        s += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
-        for key in sorted(self._internal_pardict.keys()):
-            val = getattr(self, key, None)
-            s += f"  {key} <{type(val).__name__}> : {val}\n"
+        show = f"Parameter Tracking: {self.ptnote}\n"
+        show += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
+        show += self.pt_to_dict(serialize='json', include_par=include_par)
         if return_only:
-            return s.strip()
-        print(s)
+            return show
+        print(show)
         if notices:
             print("\nAll Notices:")
             print("-------------")
@@ -270,11 +270,16 @@ class Parameters:
             if serialize == 'json':
                 if isinstance(val, datetime):
                     val = val.isoformat()
+                else:
+                    try:
+                        _ = json.dumps({'check': val})
+                    except TypeError:
+                        val = str(val)        
             rec[key] = val
         if serialize is not None:
             if serialize == 'json':
                 import json
-                return json.dumps(rec)
+                return json.dumps(rec, indent=4)
             elif serialize == 'pickle':
                 import pickle
                 return pickle.dumps(rec)
