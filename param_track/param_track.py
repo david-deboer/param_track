@@ -19,8 +19,8 @@ class Parameters:
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr',
                             '_internal_self_type', '_internal_pardict'}
-    _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu',
-                            'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
+    _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptshow', 'ptsu', 'ptnotices',
+                            'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv', '_internal_par_to_dict'}
 
     def __init__(self, ptnote='Parameter tracker', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
@@ -192,58 +192,76 @@ class Parameters:
 
         """
         for key, val in kwargs.items():
-            if key in self._internal_only_ptdef:
+            if key == 'ptnote':
+                setattr(self, key, val)
+            elif key in self._internal_only_ptdef:
                 __notice__.post(f"Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar:
-                if type(val) != bool:
-                    __notice__.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
+                if key[0] == '_':
+                    __notice__.post(f"Attempt to set internal parameter '{key}' -- ignored.", silent=False)  # always print 'ignored'
                 else:
-                    setattr(self, key, val)
+                    if type(val) != bool:
+                        __notice__.post(f"Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
+                    else:
+                        setattr(self, key, val)
             else:
                 setattr(self, key, val)
                 if key not in self._internal_only_ptvar:
                     self._internal_pardict[key] = type(val)
 
-    def ptshow(self, return_only=False, notices=False, include_par=None):
+    def ptshow(self, return_only=False, vals_only=False, include_par=None):
         """
-        Show the current parameters being tracked.
+        Show the current parameters being tracked (or their types).
 
         Parameters
         ----------
         return_only : bool
-            If True and not 'notices', then return the string instead of printing it (for __repr__ method)
-            If True and 'notices', then return the Notices object
-            If False, then print the string representation and if 'notices' then also print the notices
-        notices : bool
-            If True and not 'return_only' then print the notices after the parameters.
-            If True and 'return_only' then return the Notices object.
+            If True, then return the string instead of printing it (for __repr__ method)
+            If False, then print the string representation
+        vals_only : bool
+            If True, then only show the parameter values (types and internal parameters are not shown)
         include_par : list of str or None
             If not None, then only include these parameters in the output
 
         Returns
         -------
-        if 'return_only' and not 'notices' : str
-            JSON string representation of the current parameters
-        if 'return_only' and 'notices' : Notices
-            Notices object with all notices posted
+        if 'return_only' : str
+            string representation of the current parameters
         if not 'return_only' : None
 
         """
-        if notices and return_only:
-            return __notice__
         show = f"Parameter Tracking: {self.ptnote}\n"
-        show += f"(ptstrict: {self.ptstrict}, pterr: {self.pterr}, ptverbose: {self.ptverbose}, pttype: {self.pttype}, pttypeerr: {self.pttypeerr})\n"
-        show += self.pt_to_dict(serialize='json', include_par=include_par)
+        show += '-'*(len(show)-1) + "\n"
+        show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=False)
+        if not vals_only:
+            show += "\nParameter types:\n"
+            show += '-'*len("Parameter types:") + "\n"
+            show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=True)
+            show += "\nInternal parameters:\n"
+            show += '-'*len("Internal parameters:") + "\n"
+            show += self._internal_par_to_dict(serialize='yaml')
         if return_only:
             return show
         print(show)
-        if notices:
-            print("\nAll Notices:")
-            print("-------------")
-            for anotice in __notice__.notices:
-                print(f"  [{anotice.time}] {anotice.message}")   
     
-    def pt_to_dict(self, serialize=None, include_par=None):
+    def ptnotices(self, return_only=False):
+        """
+        Return/print the Notices object.
+
+        Parameters
+        ----------
+        return_only : bool
+            If True, then return the Notices object and doesn't print anything.
+
+        """
+        if return_only:
+            return __notice__
+        print("Notices:")
+        print("--------")
+        for anotice in __notice__.notices:
+            print(f"[{anotice.time}] {anotice.message}")   
+
+    def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False):
         """
         Return the current parameters as a dictionary.
 
@@ -251,10 +269,13 @@ class Parameters:
         ----------
         serialize : str or None
             If 'json', then return JSON serialized string
+            If 'yaml', then return YAML serialized string
             If 'pickle', then return pickle serialized bytes
             If None, then return dictionary
         include_par : list of str or None
             If not None, then only include these parameters in the output dictionary
+        types_to_dict : bool
+            If True, then return the types of the parameters instead of their values
 
         Returns
         -------
@@ -262,30 +283,57 @@ class Parameters:
             Dictionary or serialized form of current parameters
 
         """
-        from datetime import datetime
-        if serialize == 'json':
-            import json
+        from . import check_serialize
+
         rec = {}
         pars2use = self._internal_pardict.keys() if include_par is None else include_par
         for key in pars2use:
             val = copy(getattr(self, key))
-            if serialize == 'json':
-                if isinstance(val, datetime):
-                    val = val.isoformat()
-                else:
-                    try:
-                        _ = json.dumps({'check': val})
-                    except TypeError:
-                        val = str(val)        
-            rec[key] = val
-        if serialize is not None:
-            if serialize == 'json':
-                return json.dumps(rec, indent=4)
-            elif serialize == 'pickle':
-                import pickle
-                return pickle.dumps(rec)
+            if types_to_dict:
+                val = type(val)
+            rec[key] = check_serialize(serialize, val)
+        if serialize == 'json':
+            import json
+            return json.dumps(rec, indent=4)
+        elif serialize == 'yaml':
+            import yaml
+            return yaml.dump(rec)
+        elif serialize == 'pickle':
+            import pickle
+            return pickle.dumps(rec)
         return rec
     
+    def _internal_par_to_dict(self, serialize='json'):
+        """
+        Internal method to return the current internal parameters.
+
+        Parameters
+        ----------
+        serialize : str
+            If 'json', then return JSON serialized string
+            If 'yaml', then return YAML serialized string
+            If None, then return dictionary
+
+        Returns
+        -------
+        dict or str
+            Dictionary or serialized form of current parameters
+
+        """
+        rec = {}
+        for key in self._internal_only_ptvar:
+            if key[0] == '_':
+                continue
+            val = copy(getattr(self, key))
+            rec[key] = val
+        if serialize == 'json':
+            import json
+            return json.dumps(rec, indent=4)
+        elif serialize == 'yaml':
+            import yaml
+            return yaml.dump(rec)
+        return rec
+
     def pt_to_csv(self, include_par=None, as_row=False, include_header=False):
         """
         Return the current parameters as a CSV string.
