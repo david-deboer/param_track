@@ -257,9 +257,14 @@ class Parameters:
             Dictionary of current parameters
 
         """
+        from datetime import datetime
         rec = {}
         for key in self._internal_pardict.keys():
-            rec[key] = copy(getattr(self, key))
+            val = copy(getattr(self, key))
+            if serialize == 'json':
+                if isinstance(val, datetime):
+                    val = val.isoformat()
+            rec[key] = val
         if serialize is not None:
             if serialize == 'json':
                 import json
@@ -281,14 +286,15 @@ class Parameters:
         """
         import csv
         import io
+        import json
         
-        row = self.pt_to_dict()
-        fieldnames = list(row.keys())
+        this = self.pt_to_dict(serialize='json')
 
         buf = io.StringIO()
-        writer = csv.DictWriter(
-            buf,
-            fieldnames=fieldnames
-        )
-        writer.writerow(row)
+        writer = csv.writer(buf)
+        rows = []
+        for key, val in json.loads(this).items():
+            rows.append([key, val])
+        writer.writerows(rows)
+
         return buf.getvalue()
