@@ -263,6 +263,8 @@ class Parameters:
 
         """
         from datetime import datetime
+        if serialize == 'json':
+            import json
         rec = {}
         pars2use = self._internal_pardict.keys() if include_par is None else include_par
         for key in pars2use:
@@ -278,7 +280,6 @@ class Parameters:
             rec[key] = val
         if serialize is not None:
             if serialize == 'json':
-                import json
                 return json.dumps(rec, indent=4)
             elif serialize == 'pickle':
                 import pickle
