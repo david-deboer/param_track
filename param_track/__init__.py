@@ -30,3 +30,11 @@ def check_serialize(serialize, val):
             val = str(val)
     # Finally, just hope...
     return val
+
+def typemsg(key, oldtype, newtype, action):
+    msg = f"Parameter types don't match for '{key}': <old: {oldtype.__name__}> vs <new: {newtype.__name__}>"
+    if action == 'retain':
+        msg += f" -- retaining <{oldtype.__name__}>."
+    elif action == 'reset':
+        msg += f" -- resetting to <{newtype.__name__}>."
+    return msg
