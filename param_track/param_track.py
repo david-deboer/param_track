@@ -5,9 +5,16 @@
 
 """General simple parameter tracking module."""
 from .param_track_error import ParameterTrackError, Notices
-from . import typemsg
 from copy import copy
 
+
+def typemsg(key, oldtype, newtype, action):
+    msg = f"Parameter types don't match for '{key}': <old: {oldtype.__name__}> vs <new: {newtype.__name__}>"
+    if action == 'retain':
+        msg += f" -- retaining <{oldtype.__name__}>."
+    elif action == 'reset':
+        msg += f" -- resetting to <{newtype.__name__}>."
+    return msg
 
 __notice__ = Notices()
 
