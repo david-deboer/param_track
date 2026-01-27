@@ -9,8 +9,9 @@ class ParameterTrackError(Exception):
     def __init__(self, message):
         self.message = message
 
+
 class LogEntry:
-    """A single parameter track entry."""
+    """A single parameter track log entry."""
     def __init__(self, message, silent):
         self.time = datetime.now()
         self.silent = silent
@@ -28,7 +29,7 @@ class Log:
     def post(self, message, silent=False):
         self.log.append(LogEntry(message, silent))
         if not silent:
-            print(f"Entry: {message}")
+            print(message)
 
     def show(self):
         print("Log")
@@ -37,12 +38,18 @@ class Log:
             print(entry)
 
 
-def typemsg(key, oldtype, newtype, action):
-    msg = f"Parameter types don't match for '{key}': <old: {oldtype.__name__}> vs <new: {newtype.__name__}>"
+def typename(val):
+    if isinstance(val, type):
+        return val.__name__
+    return type(val).__name__
+
+
+def typemsg(key, oldt, newt, action):
+    msg = f"Parameter types don't match for '{key}': <old: {typename(oldt)}> vs <new: {typename(newt)}>"
     if action == 'retain':
-        msg += f" -- retaining <{oldtype.__name__}>."
+        msg += f" -- retaining <{typename(oldt)}>."
     elif action == 'reset':
-        msg += f" -- resetting to <{newtype.__name__}>."
+        msg += f" -- resetting to <{typename(newt)}>."
     return msg
 
 
