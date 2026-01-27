@@ -13,8 +13,8 @@ __notice__ = Notices()
 
 class Parameters:
     """
-    General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
-    viewing - typically will only use the wrapper functions 'ptset' and 'ptshow'.
+    General parameter tracking class to keep track of groups of parameters within a class with 
+    some minor checking and viewing.
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr',
@@ -24,8 +24,8 @@ class Parameters:
 
     def __init__(self, ptnote='Parameter tracker class', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
         """
-        General parameter tracking class to keep track of groups of parameters within a class with some minor checking and
-        viewing - typically will only use the methods 'ptset', 'ptget' and 'ptshow'.
+        General parameter tracking class to keep track of groups of parameters within a class with
+        some minor checking and viewing.
 
         If used as a parent Class, then child Classes can define their own parameters in their __init__ methods
         before calling the parent Class __init__ method.  If additional checking is needed for specific parameters,
