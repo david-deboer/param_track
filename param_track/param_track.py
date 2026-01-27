@@ -323,7 +323,7 @@ class Parameters:
             If 'yaml', then return YAML serialized string
             If 'pickle', then return pickle serialized bytes
             If None, then return dictionary
-        include_par : list of str or None
+        include_par : csv-list, list of str or None
             If not None, then only include these parameters in the output dictionary
         types_to_dict : bool
             If True, then return the types of the parameters instead of their values
