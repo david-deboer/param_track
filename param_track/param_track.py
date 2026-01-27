@@ -293,7 +293,7 @@ class Parameters:
             show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=True)
             show += "\nInternal parameters:\n"
             show += '-'*len("Internal parameters:") + "\n"
-            show += self.pt_to_dict(serialize='yaml', internal_to_dict=True)
+            show += self.pt_to_dict(serialize='yaml', types_to_dict="__internal__")
         if return_only:
             return show
         print(show)
@@ -312,7 +312,7 @@ class Parameters:
             return __log__
         __log__.show()
 
-    def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False, internal_to_dict=False):
+    def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False):
         """
         Return the current parameters as a dictionary.
 
@@ -325,11 +325,10 @@ class Parameters:
             If None, then return dictionary
         include_par : csv-list, list of str or None
             If not None, then only include these parameters in the output dictionary
-        types_to_dict : bool
+        types_to_dict : bool or '__internal__'
             If True, then return the types of the parameters instead of their values
-        internal_to_dict : bool
-            If True, then return the internal parameters instead of the tracked parameters (the ones in _internal_only_ptvar)
-            include_par and types_to_dict are ignored in this case.
+            If '__internal__', then return the internal parameters instead of the tracked parameters
+
         Returns
         -------
         dict, str, or bytes
@@ -337,7 +336,7 @@ class Parameters:
 
         """
         rec = {}
-        if internal_to_dict:
+        if isinstance(types_to_dict, str) and types_to_dict == "__internal__":
             include_par = [x for x in self._internal_only_ptvar if x[0]!= '_']
             types_to_dict = False  # ignore types_to_dict for internal
         else:
@@ -383,7 +382,7 @@ class Parameters:
         import io
         import json
         
-        this = self.pt_to_dict(serialize='json', include_par=include_par, types_to_dict=False, internal_to_dict=False)
+        this = self.pt_to_dict(serialize='json', include_par=include_par, types_to_dict=False)
 
         buf = io.StringIO()
         writer = csv.writer(buf)
