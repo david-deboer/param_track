@@ -122,7 +122,6 @@ class Parameters:
                 __log__.post(f"Attempt to set internal parameter/method '{key}' -- ignored, try 'ptsu'.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # It has a history, so check type.
                 oldval = copy(getattr(self, key))
-                oldtype = self._internal_pardict[key].__name__
                 setattr(self, key, val)
                 __log__.post(f"Setting parameter '{key}' to '{val}' <previous value '{oldval}'>", silent=not self.ptverbose)
                 if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.

@@ -4,15 +4,6 @@
 from datetime import datetime
 
 
-def typemsg(key, oldtype, newtype, action):
-    msg = f"Parameter types don't match for '{key}': <old: {oldtype.__name__}> vs <new: {newtype.__name__}>"
-    if action == 'retain':
-        msg += f" -- retaining <{oldtype.__name__}>."
-    elif action == 'reset':
-        msg += f" -- resetting to <{newtype.__name__}>."
-    return msg
-
-
 class ParameterTrackError(Exception):
     """Parameter track exception handling."""
     def __init__(self, message):
@@ -30,7 +21,7 @@ class LogEntry:
 
 
 class Log:
-    """Parameter track notice handling."""
+    """Parameter track log handling."""
     def __init__(self):
         self.log = []
 
@@ -44,6 +35,15 @@ class Log:
         print("---")
         for entry in self.log:
             print(entry)
+
+
+def typemsg(key, oldtype, newtype, action):
+    msg = f"Parameter types don't match for '{key}': <old: {oldtype.__name__}> vs <new: {newtype.__name__}>"
+    if action == 'retain':
+        msg += f" -- retaining <{oldtype.__name__}>."
+    elif action == 'reset':
+        msg += f" -- resetting to <{newtype.__name__}>."
+    return msg
 
 
 def check_serialize(serialize, val):
