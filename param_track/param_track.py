@@ -342,6 +342,8 @@ class Parameters:
             types_to_dict = False  # ignore types_to_dict for internal
         else:
             include_par = self._internal_pardict.keys() if include_par is None else include_par
+            if isinstance(include_par, str):
+                include_par = [x.strip() for x in include_par.split(',')]
         for key in include_par:
             val = copy(getattr(self, key))
             if types_to_dict:
