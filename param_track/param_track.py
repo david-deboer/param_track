@@ -63,7 +63,7 @@ class Parameters:
         ptsu : set parameters silently and can change internal parameters listed above (no checking, log entries or errors)
         ptshow : show current parameters being tracked
         ptlog : show or return the Log object
-        pt_to_dict : return current parameters as a dictionary (or serialized form)
+        pt_to_dict : return current parameters as a dictionary (or serialized form), plus options for types or internal parameters
         pt_to_csv : return current parameters as a CSV string
         pt_from : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
 
@@ -88,7 +88,7 @@ class Parameters:
         """
         Initialize parameters to 'default' from a list of keys.
 
-        If initialized this way, the type is then set when first set via ptset, ptadd or ptsu.
+        If initialized this way, the type is then set when first set via ptset (if ignore pttypeerr), ptadd or ptsu.
 
         Parameters
         ----------
@@ -162,14 +162,14 @@ class Parameters:
 
         """
         for key, val in kwargs.items():
-            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
+            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:  # Internal only, so ignore.
                 __log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
-            elif key in self._internal_pardict:
+            elif key in self._internal_pardict:  # Already exists, so replace it.
                 __log__.post(f"Replacing parameter '{key}' with <{val}> of type <{tn(val)}> [was <{getattr(self, key)}> of type <{tn(self._internal_pardict[key])}>]",
                              silent=not self.ptverbose)
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
-            else:
+            else:  # New parameter, so add it.
                 __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{tn(val)}>", silent=not self.ptverbose)
                 setattr(self, key, val)
                 self._internal_pardict[key] = type(val)
@@ -188,32 +188,32 @@ class Parameters:
 
         """
         for key, val in kwargs.items():
-            if key == 'ptnote':
+            if key == 'ptnote':  # always allow ptnote to be set
                 setattr(self, key, val)
                 __log__.post(f"su: Setting 'ptnote' to <{val}>", silent=not self.ptverbose)
-            elif key in self._internal_only_ptdef:
+            elif key in self._internal_only_ptdef:  # Internal method, so ignore.
                 __log__.post(f"su: Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
-            elif key in self._internal_only_ptvar:
-                if key[0] == '_':
+            elif key in self._internal_only_ptvar: # Internal variable, so only allow bools to be set.
+                if key[0] == '_':  # private internal variable, so ignore
                     __log__.post(f"su: Attempt to set internal parameter '{key}' -- ignored.", silent=False)  # always print 'ignored'
-                else:
+                else:  # public internal variable, so only allow bools to be set
                     if type(val) != bool:
                         __log__.post(f"su: Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
                     else:
                         setattr(self, key, val)
                         __log__.post(f"su: Setting internal parameter '{key}' to <{val}>", silent=not self.ptverbose)
-            elif key in self._internal_pardict and type(val) == self._internal_pardict[key]:
+            elif key in self._internal_pardict and type(val) == self._internal_pardict[key]:  # Existing parameter of same type
                 oldval = copy(getattr(self, key))
                 __log__.post(f"su: Replacing parameter '{key}' with <{val}> of same type <{tn(self._internal_pardict[key])}> [was <{oldval}>]",
                              silent=not self.ptverbose)
                 setattr(self, key, val)
-            elif key in self._internal_pardict:
+            elif key in self._internal_pardict:  # Existing parameter of different type
                 oldval = copy(getattr(self, key))
                 __log__.post(f"su: Replacing parameter '{key}' with <{val}> of different type <{tn(val)}>, " \
                              f"but retaining type <{tn(self._internal_pardict[key])}> [was <{oldval}> of type <{tn(oldval)}>]",
                              silent=not self.ptverbose)
                 setattr(self, key, val)
-            else:
+            else:  # New parameter, so add it.
                 self._internal_pardict[key] = type(val)
                 __log__.post(f"su: Adding new parameter '{key}' as <{val}> with type <{tn(val)}>", silent=not self.ptverbose)
                 setattr(self, key, val)
@@ -336,10 +336,10 @@ class Parameters:
 
         """
         rec = {}
-        if isinstance(types_to_dict, str) and types_to_dict == "__internal__":
+        if isinstance(types_to_dict, str) and types_to_dict == "__internal__":  # internal parameters only
             include_par = [x for x in self._internal_only_ptvar if x[0]!= '_']
             types_to_dict = False  # ignore types_to_dict for internal
-        else:
+        else: # normal parameters or types
             include_par = self._internal_pardict.keys() if include_par is None else include_par
             if isinstance(include_par, str):
                 include_par = [x.strip() for x in include_par.split(',')]
