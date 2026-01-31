@@ -36,12 +36,11 @@ class Log:
         if not silent:
             print(message)
 
-    def show(self):
-        print("Log")
-        print("---")
+    def show(self, file=None):
+        print("Log", file=file)
+        print("---", file=file)
         for entry in self.log:
-            print(entry)
-
+            print(entry, file=file)
 
 def typename(val):
     if isinstance(val, type):

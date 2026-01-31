@@ -309,19 +309,30 @@ class Parameters:
             return show
         print(show)
     
-    def ptlog(self, return_only=False):
+    def ptlog(self, action='show'):
         """
         Return/print the Log object.
 
         Parameters
         ----------
-        return_only : bool
-            If True, then return the Log object and don't print anything.
+        action : str
+            'return' : return the Log object
+            'show' : print the Log to stdout
+            'clear' : clear the Log entries
+            'dump' : dump the Log to a file 'param_track_log.txt'
 
         """
-        if return_only:
+        if action == 'return':
             return __log__
-        __log__.show()
+        elif action == 'show':
+            __log__.show()
+        elif action == 'clear':
+            __log__.log = []
+        elif action == 'dump':
+            with open('param_track_log.txt', 'w') as fp:
+                __log__.show(file=fp)
+        else:
+            raise ParameterTrackError(f"Unknown action '{action}' for ptlog.")
 
     def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False):
         """
