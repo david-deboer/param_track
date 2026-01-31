@@ -2,6 +2,11 @@
 # Copyright 2025 David R DeBoer
 # Licensed under the MIT license. See LICENSE file in the project root for details.
 from datetime import datetime
+try:
+    from astropy.time import Time, TimeDelta
+    from astropy.units import Quantity
+except ImportError:
+    pass
 
 
 class ParameterTrackError(Exception):
@@ -60,6 +65,12 @@ def check_serialize(serialize, val):
     if serialize == 'json' or serialize == 'yaml':
         if isinstance(val, datetime):
             return val.isoformat()
+        if isinstance(val, Time):
+            return val.isot
+        if isinstance(val, TimeDelta):
+            return val.to_value('sec')
+        if isinstance(val, Quantity):
+            return val.value
         if isinstance(val, type):
             return val.__name__
         try:
@@ -110,4 +121,7 @@ def listify(x, d={}, sep=',', NoneReturn=[], dtype=None):
         this = [x]
     if dtype is None:
         return this
-    return [dtype(z) for z in this]
+    try:
+        return [dtype(z) for z in this]
+    except Exception:
+        return this
