@@ -107,6 +107,9 @@ class Parameters:
         if isinstance(param_list, str):
             param_list = [x.strip() for x in param_list.split(',')]
         for key in param_list:
+            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
+                __log__.post(f"Attempt to initialize internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
+                continue
             setattr(self, key, default)
             self._internal_pardict[key] = self._internal_self_type
             __log__.post(f"Initializing parameter '{key}' to <{default}>", silent=not self.ptverbose)
