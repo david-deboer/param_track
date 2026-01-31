@@ -311,7 +311,7 @@ class Parameters:
     
     def ptlog(self, action='show'):
         """
-        Return/print the Log object.
+        Do stuff with the Log object.
 
         Parameters
         ----------
