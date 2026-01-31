@@ -275,9 +275,9 @@ class Parameters:
                 else:
                     __log__.post(f"Attempt to delete unknown parameter '{k}' -- ignored.", silent=False)  # always print 'ignored'
 
-    def ptshow(self, return_only=False, vals_only=False, include_par=None):
+    def ptshow(self, return_only=False, vals_only=True, include_par=None):
         """
-        Show the current parameters being tracked (or their types).
+        Show the current parameters being tracked (and optionally their types and internal parameters).
 
         Parameters
         ----------
