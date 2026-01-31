@@ -357,7 +357,7 @@ class Parameters:
         for key in include_par:
             val = copy(getattr(self, key))
             if types_to_dict:
-                val = type(val)
+                val = self._internal_pardict.get(key)
             rec[key] = check_serialize(serialize, val)
         if serialize == 'json':
             import json
