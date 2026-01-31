@@ -23,7 +23,9 @@ class Parameters:
     _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptdel', 'ptshow', 'ptsu', 'ptlog',
                             'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
 
-    def __init__(self, ptnote='Parameter tracker class', ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, **kwargs):
+    def __init__(self, ptnote='Parameter tracker class',
+                 ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptinit='__ignore__',
+                 **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with
         some minor checking and viewing.
@@ -50,6 +52,8 @@ class Parameters:
             Checks relative to the initial type set or when ptadd/ptsu was used.
         pttypeerr : bool
             Flag to make parameter setting raise ParameterTrackError on type change or just notice -- only used in ptset.
+        ptinit : list of str or csv-list
+            List of parameter names to initialize to None before setting any parameters (runs ptinit method)
         kwargs : key, value pairs
             Initial parameters to set (if any)
             
@@ -79,6 +83,8 @@ class Parameters:
         self.pttype = pttype
         self.pttypeerr = pttypeerr
         self._internal_pardict = {}
+        if ptinit != '__ignore__':
+            self.ptinit(ptinit, default=None)
         self.ptadd(**kwargs)
 
     def __repr__(self):
@@ -92,12 +98,14 @@ class Parameters:
 
         Parameters
         ----------
-        param_list : list of str
+        param_list : list of str, or csv-list
             List of keys to initialize parameters
         default : any
             Default value to set for each parameter (default is None)
 
         """
+        if isinstance(param_list, str):
+            param_list = [x.strip() for x in param_list.split(',')]
         for key in param_list:
             setattr(self, key, default)
             self._internal_pardict[key] = self._internal_self_type
