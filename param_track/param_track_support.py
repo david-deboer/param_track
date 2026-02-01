@@ -56,6 +56,16 @@ def typemsg(key, oldt, newt, action):
         msg += f" -- resetting to <{typename(newt)}>."
     return msg
 
+def write_to_clipboard(output):
+    """ Write output string to clipboard (macOS only). """
+    import platform
+    if platform.system() == 'Darwin':
+        import subprocess
+        process = subprocess.Popen(
+            'pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
+        process.communicate(output.encode('utf-8'))
+    else:
+        raise NotImplementedError("write_to_clipboard is only implemented for macOS.")
 
 def check_serialize(serialize, val):
     if serialize is None or serialize == 'pickle':
