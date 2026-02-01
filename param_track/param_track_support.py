@@ -65,7 +65,8 @@ def write_to_clipboard(output):
             'pbcopy', env={'LANG': 'en_US.UTF-8'}, stdin=subprocess.PIPE)
         process.communicate(output.encode('utf-8'))
     else:
-        raise NotImplementedError("write_to_clipboard is only implemented for macOS.")
+        print(f"Clipboard writing not supported on {platform.system()}")
+        print(output)
 
 def check_serialize(serialize, val):
     if serialize is None or serialize == 'pickle':
