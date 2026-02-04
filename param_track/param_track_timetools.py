@@ -3,7 +3,7 @@ from zoneinfo import available_timezones, ZoneInfo, ZoneInfoNotFoundError
 from datetime import datetime, timedelta
 
 
-TUNITS = {'day': 24.0 * 3600.0, 'd': 24.0 * 3600.0,
+TUNITS = {'day': 24.0 * 3600.0, 'd': 24.0 * 3600.0, 'jd': 24.0 * 3600.0,
           'hour': 3600.0, 'hr': 3600.0, 'h': 3600.0,
           'minute': 60.0,  'min': 60.0,  'm': 60.0,
           'second': 1.0, 'sec': 1.0, 's': 1.0}
