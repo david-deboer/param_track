@@ -119,7 +119,7 @@ class Parameters:
         Show or set the parameters -- this is the wrapper around the "workhorse" method _pt_set.
 
         If parameter tracking is used as a parent Class, then this can be redefined for custom behavior, then
-        call the _pt_set method to do the actual setting.
+        call the _pt_set method to do the actual setting.  Could call it 'update' there, instead of ptset.
 
         _pt_set checks for internal only variables/methods and handles strict mode and verbosity.  This checks against the
         'ptstrict' and 'pttype' parameters.  Behavior is regulated by 'pterr' and 'pttypeerr' parameters.  'ptverbose'
@@ -154,13 +154,10 @@ class Parameters:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
                 else:
                     __log__.post(f"Unknown parameter '{key}' in strict mode -- ignored.  Use 'ptadd' to add new parameters.", silent=False)  # always print 'ignored'
-            else:  # New parameter not in strict mode so just set it.
-                if self.ptsetunits:
-                    print("THIS NEEDS TO BE FIXED")  # TODO: fix ptsetunits usage
-                    #val = ptu.set_param_unit(key, val, self.units)
+            else:  # New parameter and not in strict mode so just set it.
                 __ptu__.setattr(self, key, val)
                 self._internal_pardict[key] = type(__ptu__.val)
-                __log__.post(f"Setting new parameter '{key}' to <{val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
+                __log__.post(f"Setting new parameter '{key}' to <{__ptu__.val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
 
     def ptadd(self, **kwargs):
         """
