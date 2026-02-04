@@ -18,13 +18,14 @@ class Parameters:
     some minor checking and viewing.
 
     """
-    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr',
+    _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
                             '_internal_self_type', '_internal_pardict'}
     _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptdel', 'ptshow', 'ptsu', 'ptlog',
                             'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
 
     def __init__(self, ptnote='Parameter tracker class',
-                 ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptinit='__ignore__',
+                 ptstrict=True, pterr=False, ptverbose=True, ptinit='__ignore__', 
+                 pttype=False, pttypeerr=False, ptsetunits=False,
                  **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with
@@ -54,6 +55,8 @@ class Parameters:
             Flag to make parameter setting raise ParameterTrackError on type change or just notice -- only used in ptset.
         ptinit : list of str or csv-list
             List of parameter names to initialize to None before setting any parameters (runs ptinit method)
+        ptsetunits : bool
+            Flag to set units when setting parameters (see param_track_units.py for details)
         kwargs : key, value pairs
             Initial parameters to set (if any)
             
@@ -76,12 +79,8 @@ class Parameters:
         from . import __version__
         __log__.post(f"Parameter Track:  version {__version__}", silent=True)
         __log__.post(f"Initializing Parameters: {ptnote}.", silent=True)
-        self.ptnote = ptnote
-        self.ptstrict = ptstrict
-        self.pterr = pterr
-        self.ptverbose = ptverbose
-        self.pttype = pttype
-        self.pttypeerr = pttypeerr
+        self.ptsu(ptnote=ptnote, ptstrict=ptstrict, pterr=pterr, ptverbose=ptverbose,
+                  pttype=pttype, pttypeerr=pttypeerr, ptsetunits=ptsetunits)
         self._internal_pardict = {}
         if ptinit != '__ignore__':
             self.ptinit(ptinit, default=None)
@@ -202,6 +201,10 @@ class Parameters:
             if key == 'ptnote':  # always allow ptnote to be set
                 setattr(self, key, val)
                 __log__.post(f"su: Setting 'ptnote' to <{val}>", silent=not self.ptverbose)
+            elif key == 'ptsetunits':
+                from param_track import param_track_units as ptu
+                print("NEED TO IMPLEMENT ptsu FOR ptsetunits")  # TODO: implement ptsu for ptsetunits
+                __log__.post(f"su: Setting 'ptsetunits' to <{val}>", silent=not self.ptverbose)
             elif key in self._internal_only_ptdef:  # Internal method, so ignore.
                 __log__.post(f"su: Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar: # Internal variable, so only allow bools to be set.
