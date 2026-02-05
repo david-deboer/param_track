@@ -41,24 +41,35 @@ class Units:
         self.unit_handler = None
         self.valid_unit_handler = False
 
-    def handle_units(self, unit_handler):
+    def handle_units(self, unit_handler, action='reset'):
+        """
+        Parameters
+        ----------
+        unit_handler : dict or bool or None
+            If dict, then this is the unit handler to be used. Keys are parameter names, values are unit strings.
+            If bool/None/int, then this sets the use of units but does not change the existing unit handler.
+            If other, then this turns off the use of units but does not change the existing unit handler.
+        action : str
+            If unit_handler is a dict, then this determines what to do with existing parameters that have
+            'reset' will reset the existing unit handler.
+            'update' will update the existing unit handler.
+
+        """
         if isinstance(unit_handler, dict):
             self.use_units = True
-            self._parse_unit_handler(unit_handler)
+            self._parse_unit_handler(unit_handler, action=action)
         elif isinstance(unit_handler, (bool, type(None), int)):
             self.use_units = bool(unit_handler)  # This will toggle but not delete existing handler
         else:
-            print("param_track_units warning: unit_handler must be a dict, bool, or None.")
             self.use_units = False
 
-    def _parse_unit_handler(self, unit_handler):
+    def _parse_unit_handler(self, unit_handler, action='reset'):
         """
         This checks the provided unit_handler dict for valid units and ignores invalid ones.
 
         Valid are those in builtin_units, time_units, timedelta_units, and astropy_units or in built_units values (i.e. actual types).
         
         """
-        print('currently this flushes the old unit handler and creates a new one, maybe update?')
         _uh = {}
         for key, val in unit_handler.items():
             if val in all_units:
@@ -68,7 +79,12 @@ class Units:
                     if val == vv:
                         _uh[key] = kk
                         break
-        self.unit_handler = _uh
+        if action == 'reset':
+            self.unit_handler = _uh
+        elif action == 'update':
+            self.unit_handler.update(_uh)
+        else:
+            print(f"Invalid action '{action}' for unit handler. Use 'reset' or 'update'. No changes made to existing unit handler.")
         self.valid_unit_handler = True
 
     def setattr(self, obj, key, val):
