@@ -9,7 +9,7 @@ from .param_track_support import typename as tn
 from copy import copy
 from param_track import param_track_units
 
-__ptu__ = param_track_units.Units(False)
+__ptu__ = param_track_units.Units()
 __log__ = Log()
 
 
@@ -176,13 +176,13 @@ class Parameters:
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:  # Internal only, so ignore.
                 __log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # Already exists, so replace it.
+                __ptu__.setattr(self, key, val)
                 __log__.post(f"Replacing parameter '{key}' with <{val}> of type <{tn(val)}> [was <{getattr(self, key)}> of type <{tn(self._internal_pardict[key])}>]",
                              silent=not self.ptverbose)
-                __ptu__.setattr(self, key, val)
                 self._internal_pardict[key] = type(__ptu__.val)
             else:  # New parameter, so add it.
-                __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
                 __ptu__.setattr(self, key, val)
+                __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
                 self._internal_pardict[key] = type(__ptu__.val)
 
     def ptsu(self, **kwargs):
@@ -200,16 +200,17 @@ class Parameters:
         """
         if 'ptverbose' in kwargs:
             self.ptverbose = bool(kwargs.pop('ptverbose'))
-            __log__.post(f"su: Setting 'ptverbose' to <{self.ptverbose}>", silent=not self.ptverbose)
+            __log__.post(f"su: Setting internal parameter 'ptverbose' to <{self.ptverbose}>", silent=not self.ptverbose)
+        if 'ptnote' in kwargs:  # always allow ptnote to be set
+            self.ptnote = bool(kwargs.pop('ptnote'))
+            __log__.post(f"su: Setting internal parameter 'ptnote' to <{self.ptnote}>", silent=not self.ptverbose)
+        if 'ptsetunits' in kwargs:
+            __ptu__.handle_units(kwargs.pop('ptsetunits'))
+            self.ptsetunits = __ptu__.use_units
+            __log__.post(f"su: Setting internal parameter 'ptsetunits' to <{self.ptsetunits}>", silent=not self.ptverbose)
+
         for key, val in kwargs.items():
-            if key == 'ptnote':  # always allow ptnote to be set
-                self.ptnote = val
-                __log__.post(f"su: Setting 'ptnote' to <{val}>", silent=not self.ptverbose)
-            elif key == 'ptsetunits':
-                __ptu__.handle_units(val)
-                __log__.post(f"su: Setting 'ptsetunits' to <{__ptu__.unit_handler}>", silent=not self.ptverbose)
-                self.ptsetunits = __ptu__.use_units
-            elif key in self._internal_only_ptdef:  # Internal method, so ignore.
+            if key in self._internal_only_ptdef:  # Internal method, so ignore.
                 __log__.post(f"su: Attempt to set internal method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_only_ptvar: # Internal variable, so only allow bools to be set.
                 if key[0] == '_':  # private internal variable, so ignore
