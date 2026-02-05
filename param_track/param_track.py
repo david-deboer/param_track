@@ -134,21 +134,20 @@ class Parameters:
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
                 __log__.post(f"Attempt to set internal parameter/method '{key}' -- ignored, try method 'ptsu'.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # It has a history, so check type.
-                oldval = copy(getattr(self, key))
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"Setting existing parameter '{key}' to <{__ptu__.val}> [was <{oldval}>]", silent=not self.ptverbose)
+                __log__.post(f"Setting existing parameter '{key}' to <{__ptu__.val}> [was <{__ptu__.oldval}>]", silent=not self.ptverbose)
                 if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
-                    self._internal_pardict[key] = type(__ptu__.val)
-                    __log__.post(f"Parameter '{key}' type initialized to <{tn(__ptu__.val)}>", silent=not self.ptverbose)
+                    self._internal_pardict[key] = copy(__ptu__.type)
+                    __log__.post(f"Parameter '{key}' type initialized to <{__ptu__.tn}>", silent=not self.ptverbose)
                 elif type(val) != self._internal_pardict[key]:  # Types don't match
                     if self.pttype:  # ... and I care about types.
                         if self.pttypeerr:
-                            raise ParameterTrackError(typemsg(key, self._internal_pardict[key], type(__ptu__.val), 'raise'))
+                            raise ParameterTrackError(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'raise'))
                         else:
-                            __log__.post(typemsg(key, self._internal_pardict[key], type(val), 'retain'), silent=False)  # since I care about types
+                            __log__.post(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'retain'), silent=False)  # since I care about types
                     else:  # ... but I don't care about types.
-                        self._internal_pardict[key] = type(__ptu__.val)  # so I'll just reset it to new type
-                        __log__.post(typemsg(key, self._internal_pardict[key], type(__ptu__.val), 'reset'), silent=True)  # silent since I don't care about types
+                        self._internal_pardict[key] = copy(__ptu__.type)  # so I'll just reset it to new type
+                        __log__.post(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'reset'), silent=True)  # silent since I don't care about types
             elif self.ptstrict:  # Key is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
@@ -156,8 +155,8 @@ class Parameters:
                     __log__.post(f"Unknown parameter '{key}' in strict mode -- ignored.  Use 'ptadd' to add new parameters.", silent=False)  # always print 'ignored'
             else:  # New parameter and not in strict mode so just set it.
                 __ptu__.setattr(self, key, val)
-                self._internal_pardict[key] = type(__ptu__.val)
-                __log__.post(f"Setting new parameter '{key}' to <{__ptu__.val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
+                self._internal_pardict[key] = copy(__ptu__.type)
+                __log__.post(f"Setting new parameter '{key}' to <{__ptu__.val}> of type <{__ptu__.tn}>", silent=not self.ptverbose)
 
     def ptadd(self, **kwargs):
         """
@@ -177,13 +176,13 @@ class Parameters:
                 __log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # Already exists, so replace it.
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"Replacing parameter '{key}' with <{val}> of type <{tn(val)}> [was <{getattr(self, key)}> of type <{tn(self._internal_pardict[key])}>]",
+                __log__.post(f"Replacing parameter '{key}' with <{val}> of type <{__ptu__.tn}> [was <{__ptu__.oldval}> of type <{tn(self._internal_pardict[key])}>]",
                              silent=not self.ptverbose)
-                self._internal_pardict[key] = type(__ptu__.val)
+                self._internal_pardict[key] = copy(__ptu__.type)
             else:  # New parameter, so add it.
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
-                self._internal_pardict[key] = type(__ptu__.val)
+                __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{__ptu__.tn}>", silent=not self.ptverbose)
+                self._internal_pardict[key] = copy(__ptu__.type)
 
     def ptsu(self, **kwargs):
         """
@@ -222,20 +221,18 @@ class Parameters:
                         setattr(self, key, val)
                         __log__.post(f"su: Setting internal parameter '{key}' to <{val}>", silent=not self.ptverbose)
             elif key in self._internal_pardict and type(val) == self._internal_pardict[key]:  # Existing parameter of same type
-                oldval = copy(getattr(self, key))
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of same type <{tn(self._internal_pardict[key])}> [was <{oldval}>]",
+                __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of same type <{__ptu__.tn}> [was <{__ptu__.oldval}>]",
                              silent=not self.ptverbose)
             elif key in self._internal_pardict:  # Existing parameter of different type
-                oldval = copy(getattr(self, key))
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of different type <{tn(val)}>, " \
-                             f"but retaining type <{tn(self._internal_pardict[key])}> [was <{oldval}> of type <{tn(oldval)}>]",
+                __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of different type <{__ptu__.tn}>, " \
+                             f"but retaining type <{tn(self._internal_pardict[key])}> [was <{__ptu__.oldval}> of type <{tn(__ptu__.oldval)}>]",
                              silent=not self.ptverbose)
             else:  # New parameter, so add it.
                 __ptu__.setattr(self, key, val)
-                self._internal_pardict[key] = type(__ptu__.val)
-                __log__.post(f"su: Adding new parameter '{key}' as <{__ptu__.val}> with type <{tn(__ptu__.val)}>", silent=not self.ptverbose)
+                self._internal_pardict[key] = copy(__ptu__.type)
+                __log__.post(f"su: Adding new parameter '{key}' as <{__ptu__.val}> with type <{__ptu__.tn}>", silent=not self.ptverbose)
 
     def ptget(self, key, default=ParameterTrackError):
         """

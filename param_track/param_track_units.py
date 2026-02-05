@@ -1,6 +1,7 @@
 from astropy import units as u
 from param_track.param_track_timetools import TUNITS, interpret_date
-from .param_track_support import listify
+from .param_track_support import listify, typename
+from copy import copy
 
 
 builtin_units = {
@@ -38,12 +39,13 @@ class Units:
     def __init__(self):
         self.use_units = False
         self.unit_handler = None
+        self.valid_unit_handler = False
 
     def handle_units(self, unit_handler):
         if isinstance(unit_handler, dict):
             self.use_units = True
             self._parse_unit_handler(unit_handler)
-        elif isinstance(unit_handler, (bool, type(None))):
+        elif isinstance(unit_handler, (bool, type(None), int)):
             self.use_units = bool(unit_handler)  # This will toggle but not delete existing handler
         else:
             print("param_track_units warning: unit_handler must be a dict, bool, or None.")
@@ -67,20 +69,32 @@ class Units:
                         _uh[key] = kk
                         break
         self.unit_handler = _uh
+        self.valid_unit_handler = True
 
     def setattr(self, obj, key, val):
         self.unit = None
+        self.oldval = copy(getattr(obj, key)) if hasattr(obj, key) else None
         if not self.use_units:
             self.val = val
+            self.type = type(self.val)
+            self.tn = typename(self.val)
             setattr(obj, key, val)
-        elif not isinstance(self.unit_handler, dict):
+        elif not self.valid_unit_handler:
             self.val = val
+            self.type = type(self.val)
+            self.tn = typename(self.val)
             setattr(obj, key, val)
-            print("param_track_units warning: unit_handler must be a dict -- ignoring units but setting value.")
         elif key in self.unit_handler:
             self.unit = self.unit_handler[key]
             self.val = self._make_quantity(val, self.unit)
+            self.type = type(self.val)
+            self.tn = typename(self.val)
             setattr(obj, key, self.val)
+        else:
+            self.val = val
+            self.type = type(self.val)
+            self.tn = typename(self.val)
+            setattr(obj, key, val)
 
     def _make_quantity(self, val, unit):
         if unit == '*':
