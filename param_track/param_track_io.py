@@ -133,12 +133,13 @@ def _pt_from_json_yaml(filename):
             hasterm = False
             if '__external__' in val and val['__external__'] is True:
                 continue
-            if 'value' in val:
-                hasterm = True
-                data[key] = val['value']
             if 'unit' in val:
                 hasterm = True
                 units[key] = val['unit'] if isinstance(val['unit'], str) else f"[{str(val['unit'][0])}]"
+                data[key] = None
+            if 'value' in val:
+                hasterm = True
+                data[key] = val['value']
             if not hasterm:
                 data[key] = val
         else:

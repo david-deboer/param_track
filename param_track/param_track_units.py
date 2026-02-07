@@ -94,15 +94,18 @@ class Units:
         self.oldval = copy(getattr(obj, key)) if hasattr(obj, key) else None
         if not self.use_units:
             self.val = val
+            self.tn = typename(self.val)
         elif not self.valid_unit_handler:
             self.val = val
+            self.tn = typename(self.val)
         elif key in self.unit_handler:
             self.unit = self.unit_handler[key]
             self.val = self._make_quantity(val, self.unit)
+            self.tn = key
         else:
             self.val = val
+            self.tn = typename(self.val)
         self.type = type(self.val)
-        self.tn = typename(self.val)
         setattr(obj, key, self.val)
 
     def _make_quantity(self, val, unit):
