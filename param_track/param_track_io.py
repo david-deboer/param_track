@@ -1,1 +1,146 @@
-print("TAKE I/O FROM param_track.py ETC AND IMPLEMENT ALL HERE")
+from param_track.param_track_support import ParameterTrackError
+
+def pt_to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
+    """
+    Return the current parameters as a CSV string.
+
+    Parameters
+    ----------
+    data : Class Parameters
+        The Class containing the parameters to be converted to CSV
+    include_par : list of str or None
+        If not None, then only include these parameters in the CSV output
+    as_row : bool
+        If True, then return the CSV as a single row instead of key-value pairs
+    include_header : bool
+        If True include the header row
+
+    Returns
+    -------
+    str
+        CSV string of current parameters
+
+    """
+    import csv
+    import io
+    import json
+    
+    this = data.pt_to_dict(serialize='json', include_par=include_par, types_to_dict=False)
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+
+    if as_row:
+        if include_header:
+            writer.writerow([key for key, val in json.loads(this).items()])
+        writer.writerow([val for key, val in json.loads(this).items()])
+    else:
+        if include_header:
+            writer.writerow(['parameter', 'value'])
+        writer.writerows([[key, val] for key, val in json.loads(this).items()])
+
+    if filename is None:
+        return buf.getvalue()
+    else:
+        with open(filename, 'w') as f:
+            f.write(buf.getvalue())
+
+def pt_from(filename, as_row=False):
+    """
+    Set parameters from a file, depending on the format of the file.
+
+    Currently csv, json and yaml formats are supported.
+
+    If json or yaml, then the file may have one of two formats (or mixture of the two):
+    1 - key-value pairs of parameters to be set, e.g.:
+        {
+            "param1": value1,
+            "param2": value2,
+            ...
+        }
+    2 - key-dict pairs, where the dict has a key 'value' and an optional key 'units', e.g.:
+        {
+            "param1": {"value": value1, "units": "s"},
+            "param2": {"value": value2},
+            ...    
+        }
+    if the 'units' parameter is passed, it contains the units to be used for interpreting the parameter values,
+    if the input file is in format 2, then the 'units' parameter is ignored for those parameters that have a 'units' key in the file.
+
+
+    Parameters
+    ----------
+    filename : str
+        Path to the file containing parameters
+    as_row : False or int (CSV format only)
+        If int, then read the CSV from row 'as_row' instead of key-value pairs
+        and first line is header (works since row 0 is header)
+
+    Returns
+    -------
+    dict
+        Dictionary of parameters read from the file
+    dict
+        Dictionary of units for the parameters read from the file (if any)
+
+    """
+    if filename.endswith('.csv'):
+        data, units = _pt_from_csv(filename, as_row=as_row)
+    elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
+        data, units = _pt_from_json_yaml(filename)
+    else:
+        raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+    return data, units
+
+def _pt_from_csv(self, filename, use_add=False, as_row=False):
+    """Set parameters from a CSV file (see pt_from)."""
+    import csv
+    if as_row:
+        as_row = int(as_row)
+    data = {}
+    units = {}
+    with open(filename, 'r') as fp:
+        reader = csv.reader(fp)
+        if as_row:
+            keys = next(reader)
+        for i, row in enumerate(reader):
+            if as_row:
+                if i != as_row-1:
+                    continue
+                for key, val in zip(keys, row):
+                    data[key] = val
+                break
+            else:
+                if len(row) != 2:
+                    continue
+                key, val = row
+                data[key] = val
+    return data, units
+
+def _pt_from_json_yaml(filename):
+    """Set parameters from a JSON or YAML file (see pt_from)."""
+    with open(filename, 'r') as fp:
+        if filename.endswith('.json'):
+            import json
+            data1 = json.load(fp)
+        elif filename.endswith('.yaml') or filename.endswith('.yml'):
+            import yaml
+            data1 = yaml.safe_load(fp)
+    data = {}
+    units = {}
+    for key, val in data1.items():
+        if isinstance(val, dict):
+            hasterm = False
+            if '__external__' in val and val['__external__'] is True:
+                continue
+            if 'value' in val:
+                hasterm = True
+                data[key] = val['value']
+            if 'unit' in val:
+                hasterm = True
+                units[key] = val['unit'] if isinstance(val['unit'], str) else f"[{str(val['unit'][0])}]"
+            if not hasterm:
+                data[key] = val
+        else:
+            data[key] = val
+    return data, units

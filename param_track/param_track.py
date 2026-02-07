@@ -90,29 +90,46 @@ class Parameters:
     def __repr__(self):
         return self.ptshow(return_only=True)
 
-    def ptinit(self, param_list, default=None):
+    def ptinit(self, param_list, default=None, use_types=False):
         """
-        Initialize parameters to 'default' from a list of keys.
+        Initialize parameters to 'default' from a list of keys or a filename via ptsu method, HOWEVER (and unless
+        'use_types' is True) the parameter type is set as a special internal type that is only used for checking if
+        the parameter is reset to a different type in ptset, but it won't be set to this type.  This allows for
+        initialization of parameters without setting their type, but then later when they are set via ptset, the type
+        will be initialized and checked against future resets.
 
-        If initialized this way, the type is then set when first set via ptset (if ignore pttypeerr), ptadd or ptsu.
+        Note that if the parameter list is a filename, then the parameters will be initialized from the file and use_types
+        will be set to True since the types will be set from the file.
 
         Parameters
         ----------
-        param_list : list of str, or csv-list
-            List of keys to initialize parameters
+        param_list : list of str, csv-list or filename
+            List of keys to initialize parameters or filename
         default : any
             Default value to set for each parameter (default is None)
+        use_types : bool, optional
+            If True, then handle types/units when initializing parameters (see param_track_units.py for details)
 
         """
         if isinstance(param_list, str):
-            param_list = [x.strip() for x in param_list.split(',')]
-        for key in param_list:
-            if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
-                __log__.post(f"Attempt to initialize internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
-                continue
-            __ptu__.setattr(self, key, default)
-            self._internal_pardict[key] = self._internal_self_type  # Set type to self type to indicate not yet set.
-            __log__.post(f"Initializing parameter '{key}' to <{__ptu__.val}>", silent=not self.ptverbose)
+            from os.path import isfile
+            if isfile(param_list):
+                from .param_track_io import pt_from
+                data, units = pt_from(param_list, as_row=False)
+                if units:
+                    self.ptsu(ptsetunits=units)
+                    use_types = True
+            else:
+               data = {x.strip(): default for x in param_list.split(',')}
+        elif isinstance(param_list, list):
+            data = {key: default for key in param_list}
+        else:
+            __log__.post(f"Parameter list for initialization must be a string or list, got {tn(param_list)}", silent=False)  # always print 'ignored'
+            return
+        __log__.post(f"Initializing parameters from {param_list}", silent=not self.ptverbose)
+        self.__pt_init_flag__ = not use_types  # internal flag to indicate the initialization phase/type handling in ptsu
+        self.ptsu(**data)
+        self.__pt_init_flag__ = False  # reset the initialization phase flag
 
     def ptset(self, **kwargs):
         """
@@ -220,6 +237,10 @@ class Parameters:
                     else:
                         setattr(self, key, val)
                         __log__.post(f"su: Setting internal parameter '{key}' to <{val}>", silent=not self.ptverbose)
+            elif self.__pt_init_flag__:  # During initialization phase, so set without type checking but mark type as internal self type for future checking.
+                __ptu__.setattr(self, key, val)
+                self._internal_pardict[key] = self._internal_self_type  # mark type as internal self type for future checking
+                __log__.post(f"su: Initializing parameter '{key}' to <{__ptu__.val}> with internal self type", silent=not self.ptverbose)   
             elif key in self._internal_pardict and type(val) == self._internal_pardict[key]:  # Existing parameter of same type
                 __ptu__.setattr(self, key, val)
                 __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of same type <{__ptu__.tn}> [was <{__ptu__.oldval}>]",

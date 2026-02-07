@@ -72,19 +72,21 @@ class Units:
         """
         _uh = {}
         for key, val in unit_handler.items():
+            is_list = True if val[0] == '[' else False
+            val = val.strip('[]') if isinstance(val, str) else val
             if val in all_units:
-                _uh[key] = val
+                _uh[key] = f"[{val}]" if is_list else val
             else:
                 for kk, vv in builtin_units.items():
                     if val == vv:
-                        _uh[key] = kk
+                        _uh[key] = f"[{kk}]" if is_list else kk
                         break
         if action == 'reset':
             self.unit_handler = _uh
         elif action == 'update':
             self.unit_handler.update(_uh)
         else:
-            print(f"Invalid action '{action}' for unit handler. Use 'reset' or 'update'. No changes made to existing unit handler.")
+            raise ValueError(f"Invalid action for unit handler parsing: {action}. Must be 'reset' or 'update'.")
         self.valid_unit_handler = True
 
     def setattr(self, obj, key, val):
@@ -97,6 +99,8 @@ class Units:
         elif key in self.unit_handler:
             self.unit = self.unit_handler[key]
             self.val = self._make_quantity(val, self.unit)
+        else:
+            self.val = val
         self.type = type(self.val)
         self.tn = typename(self.val)
         setattr(obj, key, self.val)
