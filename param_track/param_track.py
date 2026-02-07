@@ -301,17 +301,18 @@ class Parameters:
                 else:
                     __log__.post(f"Attempt to delete unknown parameter '{k}' -- ignored.", silent=False)  # always print 'ignored'
 
-    def ptshow(self, return_only=False, vals_only=True, include_par=None):
+    def ptshow(self, show_all=False, return_only=False, include_par=None):
         """
         Show the current parameters being tracked (and optionally their types and internal parameters).
 
         Parameters
         ----------
+        show_all : bool
+            If True, then show all parameters, types and internal parameters.
+            If False, then only show parameters (no types or internal parameters).
         return_only : bool
             If True, then return the string instead of printing it (for __repr__ method)
             If False, then print the string representation
-        vals_only : bool
-            If True, then only show the parameter values (types and internal parameters are not shown)
         include_par : list of str or None
             If not None, then only include these parameters in the output
 
@@ -324,7 +325,7 @@ class Parameters:
         show = f"Parameter Tracking: {self.ptnote}\n"
         show += '-'*(len(show)-1) + "\n"
         show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=False)
-        if not vals_only:
+        if show_all:
             show += "\nParameter types:\n"
             show += '-'*len("Parameter types:") + "\n"
             show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=True)
