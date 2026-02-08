@@ -83,6 +83,10 @@ def check_serialize(serialize, val):
             return val.to_string()
         if isinstance(val, type):
             return val.__name__
+        if isinstance(val, (list, tuple, set)):
+            return [check_serialize(serialize, v) for v in val]
+        if isinstance(val, dict):
+            return {k: check_serialize(serialize, v) for k, v in val.items()}
         try:
             if serialize == 'json':
                 import json
