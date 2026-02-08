@@ -122,7 +122,8 @@ class Units:
                 else:
                     return builtin_units[unit](val)
             except:
-                print(f"param_track_units warning: could not convert value <{val}> to type <{unit}>.")
+                if val is not None:
+                    print(f"param_track_units warning: could not convert value <{val}> to type <{unit}>.")
                 return val
         if unit in time_units or unit in timedelta_units:
             try:
@@ -132,8 +133,9 @@ class Units:
                 else:
                     return interpret_date(val, fmt=unit)
             except:
-                print(f"param_track_units warning: could not convert value <{val}> to Time.")
-                print("Returning original value...???")
+                if val is not None:
+                    print(f"param_track_units warning: could not convert value <{val}> to Time.")
+                    print("Returning original value...???")
                 return val
         if unit in astropy_units:
             try:
