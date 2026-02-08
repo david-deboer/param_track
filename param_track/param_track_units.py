@@ -109,10 +109,10 @@ class Units:
         setattr(obj, key, self.val)
 
     def _make_quantity(self, val, unit):
-        if unit == '*':
+        if unit == '*' or not isinstance(unit, (str, type)):
             return val
         is_list = False
-        if unit[0] == '[':
+        if str(unit[0]) == '[' or isinstance(val, list):
             is_list = True
             unit = unit.strip('[]')
         if unit in builtin_units:
