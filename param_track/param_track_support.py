@@ -78,9 +78,9 @@ def check_serialize(serialize, val):
         if isinstance(val, Time):
             return val.isot
         if isinstance(val, TimeDelta):
-            return val.to_value('sec')
+            return f"{float(val.to_value('sec'))} sec"
         if isinstance(val, Quantity):
-            return val.value
+            return val.to_string()
         if isinstance(val, type):
             return val.__name__
         try:
