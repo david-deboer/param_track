@@ -112,10 +112,11 @@ class Parameters:
 
         """
         if isinstance(param_list, str):
+            inp = param_list.split(':')
             from os.path import isfile
-            if isfile(param_list):
+            if isfile(inp[0]):
                 from .param_track_io import pt_from
-                data, units = pt_from(param_list, as_row=False)
+                data, units = pt_from(inp[0], use_key=inp[1] if len(inp) > 1 else None)
                 if units:
                     self.ptsu(ptsetunits=units)
                     use_types = True
