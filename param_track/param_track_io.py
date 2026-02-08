@@ -45,7 +45,7 @@ def pt_to_csv(data, filename=None, include_par=None, as_row=False, include_heade
         with open(filename, 'w') as f:
             f.write(buf.getvalue())
 
-def pt_from(filename, as_row=False):
+def pt_from(filename, as_row=False, use_key=None):
     """
     Set parameters from a file, depending on the format of the file.
 
@@ -87,12 +87,12 @@ def pt_from(filename, as_row=False):
     if filename.endswith('.csv'):
         data, units = _pt_from_csv(filename, as_row=as_row)
     elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
-        data, units = _pt_from_json_yaml(filename)
+        data, units = _pt_from_json_yaml(filename, use_key=use_key)
     else:
         raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
     return data, units
 
-def _pt_from_csv(self, filename, use_add=False, as_row=False):
+def _pt_from_csv(filename, as_row=False):
     """Set parameters from a CSV file (see pt_from)."""
     import csv
     if as_row:
@@ -117,7 +117,7 @@ def _pt_from_csv(self, filename, use_add=False, as_row=False):
                 data[key] = val
     return data, units
 
-def _pt_from_json_yaml(filename):
+def _pt_from_json_yaml(filename, use_key=None):
     """Set parameters from a JSON or YAML file (see pt_from)."""
     with open(filename, 'r') as fp:
         if filename.endswith('.json'):
@@ -128,6 +128,10 @@ def _pt_from_json_yaml(filename):
             data1 = yaml.safe_load(fp)
     data = {}
     units = {}
+    if use_key is not None and use_key not in data1:
+        raise ParameterTrackError(f"Key '{use_key}' not found in file {filename}.")
+    if use_key is not None:
+        data1 = data1[use_key]
     for key, val in data1.items():
         if isinstance(val, dict):
             hasterm = False
