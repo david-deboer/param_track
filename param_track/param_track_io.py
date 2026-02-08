@@ -88,6 +88,11 @@ def pt_from(filename, as_row=False, use_key=None):
         data, units = _pt_from_csv(filename, as_row=as_row)
     elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
         data, units = _pt_from_json_yaml(filename, use_key=use_key)
+    elif filename.endswith('.npz') or filename.endswith('.npy'):
+        import numpy as np
+        npdata = np.load(filename, allow_pickle=True)
+        data = {key: npdata[key].item() for key in npdata.files}
+        units = {}
     else:
         raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
     return data, units
