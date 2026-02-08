@@ -144,8 +144,10 @@ class Units:
                 else:
                     val = u.Quantity(val, unit)
             except:
-                print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
+                if val is not None:
+                    print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
             return val
 
-        print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
+        if val is not None:
+            print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
         return val
