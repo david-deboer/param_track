@@ -92,6 +92,10 @@ def pt_from(filename, as_row=False, use_key=None):
         import numpy as np
         npdata = np.load(filename, allow_pickle=True)
         data = {key: npdata[key].item() for key in npdata.files}
+        if isinstance(use_key, str):
+            if use_key not in data:
+                raise ParameterTrackError(f"Key '{use_key}' not found in file {filename}.")
+            data = data[use_key]
         units = {}
     else:
         raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
