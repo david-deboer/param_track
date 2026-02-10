@@ -23,7 +23,10 @@ astropy_units = {
     'deg': 'astropy:angle',
     'Hz': 'astropy:frequency',
     'm/s': 'astropy:velocity',
-    'kg': 'astropy:mass'
+    'kg': 'astropy:mass',
+    'hourangle': 'astropy:angle',
+    'rad': 'astropy:angle',
+    'radian': 'astropy:angle'
 }
 astropy_prefixes = ['T', 'G', 'M', 'k', 'h', 'da', 'd', 'c', 'm', 'u', 'n', 'p', 'f']
 
