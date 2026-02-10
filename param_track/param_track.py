@@ -4,6 +4,7 @@
 
 
 """General simple parameter tracking module."""
+from param_track.param_track_io import from_file
 from .param_track_support import ParameterTrackError, Log, typemsg, check_serialize
 from .param_track_support import typename as tn
 from copy import copy
@@ -408,49 +409,10 @@ class Parameters:
             import pickle
             return pickle.dumps(rec)
         return rec
-
-    def pt_to_csv(self, include_par=None, as_row=False, include_header=False):
-        """
-        Return the current parameters as a CSV string.
-
-        Parameters
-        ----------
-        include_par : list of str or None
-            If not None, then only include these parameters in the CSV output
-        as_row : bool
-            If True, then return the CSV as a single row instead of key-value pairs
-        include_header : bool
-            If True include the header row
-
-        Returns
-        -------
-        str
-            CSV string of current parameters
-
-        """
-        import csv
-        import io
-        import json
-        
-        this = self.pt_to_dict(serialize='json', include_par=include_par, types_to_dict=False)
-
-        buf = io.StringIO()
-        writer = csv.writer(buf)
-
-        if as_row:
-            if include_header:
-                writer.writerow([key for key, val in json.loads(this).items()])
-            writer.writerow([val for key, val in json.loads(this).items()])
-        else:
-            if include_header:
-                writer.writerow(['parameter', 'value'])
-            writer.writerows([[key, val] for key, val in json.loads(this).items()])
-
-        return buf.getvalue()
     
-    def pt_from(self, filename, use_add=False, as_row=False):
+    def pt_from(self, filename, use_key=None, use_add=False, as_row=False):
         """
-        Set parameters from a file, depending on tthe format of the file per tag.
+        Set parameters from a file, depending on the format of the file.
 
         Currently csv, json and yaml formats are supported.
     
@@ -458,6 +420,8 @@ class Parameters:
         ----------
         filename : str
             Path to the file containing parameters
+        use_key : str or None
+            If not None, then use this key to get the parameters from the file
         use_add : bool
             If True, then use ptadd to add parameters instead of ptset
         as_row : False or int (CSV format only)
@@ -465,44 +429,17 @@ class Parameters:
             and first line is header (works since row 0 is header)
 
         """
-        __log__.post(f"{'Adding' if use_add else 'Setting'} parameters from {filename}", silent=not self.ptverbose)
-        if filename.endswith('.csv'):
-            self._pt_from_csv(filename, as_row=as_row, use_add=use_add)
-        elif filename.endswith('.json'):
-            import json
-            with open(filename, 'r') as fp:
-                data = json.load(fp)
-            using = self.ptadd if use_add else self.ptset
-            using(**data)
-        elif filename.endswith('.yaml') or filename.endswith('.yml'):
-            import yaml
-            with open(filename, 'r') as fp:
-                data = yaml.safe_load(fp)
-            using = self.ptadd if use_add else self.ptset
-            using(**data)
-        else:
-            raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
-
-    def _pt_from_csv(self, filename, use_add=False, as_row=False):
-        """Set parameters from a CSV file (see pt_from)."""
-        import csv
+        from param_track.param_track_io import from_file
+        __log__.post(f"{'Adding' if use_add else 'Setting'} parameters from {filename}{' with key ' + use_key if use_key else ''}", silent=not self.ptverbose)
         if as_row:
-            as_row = int(as_row)
-            __log__.post(f"{'Adding' if use_add else 'Setting'} from row {as_row}", silent=not self.ptverbose)
-        using = self.ptadd if use_add else self.ptset
-        with open(filename, 'r') as fp:
-            reader = csv.reader(fp)
-            if as_row:
-                keys = next(reader)
-            for i, row in enumerate(reader):
-                if as_row:
-                    if i != as_row-1:
-                        continue
-                    for key, val in zip(keys, row):
-                        using(**{key: val})
-                    break
-                else:
-                    if len(row) != 2:
-                        continue
-                    key, val = row
-                    using(**{key: val})
+            if filename.endswith('.csv'):
+                __log__.post("Using 'as_row' option.", silent=self.ptverbose)
+            else:
+                __log__.post(f"Warning: 'as_row' option is only applicable for CSV files, ignoring 'as_row' for {filename}", silent=False)  # always print 'ignored'
+        data, units = from_file(filename, use_key=use_key, as_row=as_row)
+        if units:
+            self.ptsu(ptsetunits=units)
+        if use_add:
+            self.ptadd(**data)
+        else:
+            self.ptset(**data)

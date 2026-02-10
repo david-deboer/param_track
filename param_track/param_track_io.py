@@ -1,6 +1,6 @@
 from param_track.param_track_support import ParameterTrackError
 
-def pt_to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
+def to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
     """
     Return the current parameters as a CSV string.
 
@@ -45,7 +45,7 @@ def pt_to_csv(data, filename=None, include_par=None, as_row=False, include_heade
         with open(filename, 'w') as f:
             f.write(buf.getvalue())
 
-def pt_from(filename, as_row=False, use_key=None):
+def from_file(filename, as_row=False, use_key=None):
     """
     Set parameters from a file, depending on the format of the file.
 
@@ -85,9 +85,9 @@ def pt_from(filename, as_row=False, use_key=None):
 
     """
     if filename.endswith('.csv'):
-        data, units = _pt_from_csv(filename, as_row=as_row)
+        data, units = _from_csv(filename, as_row=as_row)
     elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
-        data, units = _pt_from_json_yaml(filename, use_key=use_key)
+        data, units = _from_json_yaml(filename, use_key=use_key)
     elif filename.endswith('.npz') or filename.endswith('.npy'):
         import numpy as np
         npdata = np.load(filename, allow_pickle=True)
@@ -101,8 +101,9 @@ def pt_from(filename, as_row=False, use_key=None):
         raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
     return data, units
 
-def _pt_from_csv(filename, as_row=False):
-    """Set parameters from a CSV file (see pt_from)."""
+def _from_csv(filename, as_row=False):
+    """Set parameters from a CSV file (see from_file)."""
+    print("Units not currently supported for CSV input.")
     import csv
     if as_row:
         as_row = int(as_row)
@@ -126,8 +127,8 @@ def _pt_from_csv(filename, as_row=False):
                 data[key] = val
     return data, units
 
-def _pt_from_json_yaml(filename, use_key=None):
-    """Set parameters from a JSON or YAML file (see pt_from)."""
+def _from_json_yaml(filename, use_key=None):
+    """Set parameters from a JSON or YAML file (see from_file)."""
     with open(filename, 'r') as fp:
         if filename.endswith('.json'):
             import json
