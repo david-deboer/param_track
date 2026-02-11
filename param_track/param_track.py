@@ -116,11 +116,9 @@ class Parameters:
             inp = param_list.split(':')
             from os.path import isfile
             if isfile(inp[0]):
-
-                data, units = from_file(inp[0], use_key=inp[1] if len(inp) > 1 else None)
-                if units:
-                    self.ptsu(ptsetunits=units)
-                    use_types = True
+                use_key=inp[1] if len(inp) > 1 else None
+                self.pt_from(inp[0], use_key=use_key, use_option='su', as_row=False)
+                return
             else:
                data = {x.strip(): default for x in param_list.split(',')}
         elif isinstance(param_list, list):
@@ -410,7 +408,7 @@ class Parameters:
             return pickle.dumps(rec)
         return rec
     
-    def pt_from(self, filename, use_key=None, use_add=False, as_row=False):
+    def pt_from(self, filename, use_key=None, use_option='add', as_row=False):
         """
         Set parameters from a file, depending on the format of the file.
 
@@ -422,15 +420,17 @@ class Parameters:
             Path to the file containing parameters
         use_key : str or None
             If not None, then use this key to get the parameters from the file
-        use_add : bool
-            If True, then use ptadd to add parameters instead of ptset
+        use_option : str
+            If 'add', then use ptadd to add parameters
+            If 'set', then use ptset to set parameters
+            If 'su', then use ptsu to set parameters and units
         as_row : False or int (CSV format only)
             If int, then read the CSV from row 'as_row' instead of key-value pairs
             and first line is header (works since row 0 is header)
 
         """
         from param_track.param_track_io import from_file
-        __log__.post(f"{'Adding' if use_add else 'Setting'} parameters from {filename}{' with key ' + use_key if use_key else ''}", silent=not self.ptverbose)
+        __log__.post(f"{'Adding' if use_option == 'add' else 'Setting'} parameters from {filename}{' with key ' + use_key if use_key else ''}", silent=not self.ptverbose)
         if as_row:
             if filename.endswith('.csv'):
                 __log__.post("Using 'as_row' option.", silent=self.ptverbose)
@@ -439,7 +439,9 @@ class Parameters:
         data, units = from_file(filename, use_key=use_key, as_row=as_row)
         if units:
             self.ptsu(ptsetunits=units)
-        if use_add:
+        if use_option == 'add':
             self.ptadd(**data)
-        else:
+        elif use_option == 'set':
             self.ptset(**data)
+        elif use_option == 'su':
+            self.ptsu(**data)

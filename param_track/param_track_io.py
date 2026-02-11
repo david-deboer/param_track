@@ -85,20 +85,23 @@ def from_file(filename, as_row=False, use_key=None):
 
     """
     if filename.endswith('.csv'):
-        data, units = _from_csv(filename, as_row=as_row)
+        return _from_csv(filename, as_row=as_row)
     elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
-        data, units = _from_json_yaml(filename, use_key=use_key)
+        return _from_json_yaml(filename, use_key=use_key)
     elif filename.endswith('.npz') or filename.endswith('.npy'):
-        import numpy as np
-        npdata = np.load(filename, allow_pickle=True)
-        data = {key: npdata[key].item() for key in npdata.files}
-        if isinstance(use_key, str):
-            if use_key not in data:
-                raise ParameterTrackError(f"Key '{use_key}' not found in file {filename}.")
-            data = data[use_key]
-        units = {}
-    else:
-        raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+        return _from_npz(filename, use_key=use_key)
+    raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+
+def _from_npz(filename, use_key=None):
+    """Set parameters from a NPZ file (see from_file)."""
+    import numpy as np
+    npdata = np.load(filename, allow_pickle=True)
+    data = {key: npdata[key].item() for key in npdata.files}
+    if isinstance(use_key, str):
+        if use_key not in data:
+            raise ParameterTrackError(f"Key '{use_key}' not found in file {filename}.")
+        data = data[use_key]
+    units = {}
     return data, units
 
 def _from_csv(filename, as_row=False):
