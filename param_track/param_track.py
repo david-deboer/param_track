@@ -146,7 +146,7 @@ class Parameters:
             elif key in self._internal_pardict:  # It has a history, so check type.
                 __ptu__.setattr(self, key, val)
                 __log__.post(f"Setting existing parameter {__ptu__.msg}", silent=not self.ptverbose)
-                if self._internal_pardict[key] is None:  # Set via ptinit so doesn't have a type yet.
+                if self._internal_pardict[key] is None:  # None always gets updated type
                     self._internal_pardict[key] = copy(__ptu__.type)
                 elif type(val) != self._internal_pardict[key]:  # Types don't match
                     if self.pttype:  # ... and I care about types.
@@ -332,7 +332,7 @@ class Parameters:
             with open('param_track_log.txt', 'w') as fp:
                 __log__.show(file=fp)
         else:
-            raise ParameterTrackError(f"Unknown action '{action}' for ptlog.")
+            print(f"Unknown 'ptlog' action '{action}'.")
 
     def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False):
         """
@@ -418,3 +418,5 @@ class Parameters:
             self.ptset(**data)
         elif use_option == 'su':
             self.ptsu(**data)
+        else:
+            print("Unknown option 'use_option'")

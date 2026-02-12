@@ -5,14 +5,14 @@ from .param_track_support import listify, typename
 from copy import copy
 
 
-builtin_units = {
-    'float': float,  # Technically not a unit, but included for completeness
-    'int': int,  # Technically not a unit, but included for completeness
-    'str': str,  # Technically not a unit, but included for completeness
-    'bool': bool, # Technically not a unit, but included for completeness
-    'complex': complex  # Technically not a unit, but included for completeness
+builtin_units = {  # Not units, but included for completeness
+    'float': float,
+    'int': int,
+    'str': str,
+    'bool': bool,
+    'complex': complex
 }
-time_units = {  # Also, technically not a unit
+time_units = {  # Also, not units
     'Time': 'Time',
     'astropy:time': 'Time',
     'datetime': 'datetime'
@@ -54,7 +54,7 @@ class Units:
             If bool/None/int, then this sets the use of units but does not change the existing unit handler.
             If other, then this turns off the use of units but does not change the existing unit handler.
         action : str
-            If unit_handler is a dict, then this determines what to do with existing parameters that have
+            If unit_handler is a dict, then this determines what to do with existing parameters
             'reset' will reset the existing unit handler.
             'update' will update the existing unit handler.
 
