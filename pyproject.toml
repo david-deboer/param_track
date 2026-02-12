@@ -5,7 +5,7 @@ build-backend = 'setuptools.build_meta'
 [project]
 name = "param_track"
 authors = [{name = "David DeBoer", email="david.r.deboer@gmail.com"}]
-version = "1.0.1"
+version = "1.0.2"
 keywords = ["Parameters"]
 license = "MIT"
 readme = "README.md"
