@@ -96,7 +96,7 @@ class Units:
     def setattr(self, obj, key, val):
         self.unit = None
         self.oldval = copy(getattr(obj, key, None))
-        self.oldtype = get(obj._internal_pardict, key, None)
+        self.oldtype = obj._internal_pardict.get(key, None)
         if not self.use_units:
             self.val = val
         elif not self.valid_unit_handler:
