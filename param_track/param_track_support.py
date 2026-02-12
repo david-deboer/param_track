@@ -47,9 +47,8 @@ def typename(val):
         return val.__name__
     return type(val).__name__
 
-
 def typemsg(key, oldt, newt, action):
-    msg = f"Parameter types don't match for '{key}': <old: {typename(oldt)}> vs <new: {typename(newt)}>"
+    msg = f"Parameter types don't match for '{key}': old: ({typename(oldt)}) vs new: ({typename(newt)})"
     if action == 'retain':
         msg += f" -- retaining <{typename(oldt)}>."
     elif action == 'reset':

@@ -1,3 +1,4 @@
+from httpx import get
 from astropy import units as u
 from param_track.param_track_timetools import TUNITS, interpret_date
 from .param_track_support import listify, typename
@@ -94,22 +95,26 @@ class Units:
 
     def setattr(self, obj, key, val):
         self.unit = None
-        self.oldval = copy(getattr(obj, key)) if hasattr(obj, key) else None
+        self.oldval = copy(getattr(obj, key, None))
+        self.oldtype = get(obj._internal_pardict, key, None)
         if not self.use_units:
             self.val = val
-            self.tn = typename(self.val)
         elif not self.valid_unit_handler:
             self.val = val
-            self.tn = typename(self.val)
         elif key in self.unit_handler:
             self.unit = self.unit_handler[key]
             self.val = self._make_quantity(val, self.unit)
-            self.tn = key
         else:
             self.val = val
-            self.tn = typename(self.val)
-        self.type = type(self.val)
+        self.type = None if self.val is None else type(self.val)
+        self.tn = 'None' if self.type is None else typename(self.val)
         setattr(obj, key, self.val)
+        self.msg = f"'{key}' to <{self.val}> ({self.tn})"
+        if self.oldval is not None:
+            self.msg += f" [was <{self.oldval}>"
+            if self.oldtype is not None:
+                self.msg += f" ({typename(self.oldtype)})"
+            self.msg += "]"
 
     def _make_quantity(self, val, unit):
         if unit == '*' or not isinstance(unit, (str, type)):

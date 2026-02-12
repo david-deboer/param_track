@@ -21,7 +21,7 @@ class Parameters:
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
-                            '_internal_self_type', '_internal_pardict'}
+                            '_internal_pardict'}
     _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptdel', 'ptshow', 'ptsu', 'ptlog',
                             'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
 
@@ -76,7 +76,6 @@ class Parameters:
         pt_from : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
 
         """
-        self._internal_self_type = type(self)
         from . import __version__
         __log__.post(f"Parameter Track:  version {__version__}", silent=True)
         __log__.post(f"Parameters tracking: {ptnote}.", silent=True)
@@ -95,8 +94,8 @@ class Parameters:
         Initialize parameters to 'default' from a list of keys or a filename via ptsu method.
 
         If the default value is not None, then the parameters will be initialized to this value and the type set to the type of this value.
-        If the default value is None, then the parameters will be initialized to None and the type will be set to the internal self type
-        (see _internal_self_type) as a marker for future type checking.
+        If the default value is None, then the parameters will be initialized to None and the type will be set None as a marker for
+        future type checking.
 
         Parameters
         ----------
@@ -112,7 +111,7 @@ class Parameters:
             inp = param_list.split(':')
             from os.path import isfile
             if isfile(inp[0]):
-                use_key=inp[1] if len(inp) > 1 else None
+                use_key = inp[1] if len(inp) > 1 else None
                 self.pt_from(inp[0], use_key=use_key, use_option='su', as_row=False)
                 return
             else:
@@ -120,7 +119,8 @@ class Parameters:
         elif isinstance(param_list, list):
             data = {key: default for key in param_list}
         else:
-            __log__.post(f"Parameter list for initialization must be a string or list, got {tn(param_list)}", silent=False)  # always print 'ignored'
+            __log__.post(f"Parameter list for initialization must be a string or list, "
+                         f"got {param_list} ({tn(param_list)})", silent=False)  # always print 'ignored'
             return
         __log__.post(f"Initializing parameters from {param_list}", silent=not self.ptverbose)
         self.ptsu(**data)
@@ -132,9 +132,8 @@ class Parameters:
         If parameter tracking is used as a parent Class, then this can be redefined for custom behavior, then
         call the _pt_set method to do the actual setting.  Could call it 'update' there, instead of ptset.
 
-        _pt_set checks for internal only variables/methods and handles strict mode and verbosity.  This checks against the
-        'ptstrict' and 'pttype' parameters.  Behavior is regulated by 'pterr' and 'pttypeerr' parameters.  'ptverbose'
-        regulates notice printing.
+        _pt_set checks for internal only variables/methods (ignores) and handles strict mode and verbosity.  This checks
+        against the 'ptstrict' and 'pttype' parameters.  Behavior is regulated by 'pterr' and 'pttypeerr' parameters.
 
         """
         self._pt_set(**kwargs)
@@ -146,10 +145,9 @@ class Parameters:
                 __log__.post(f"Attempt to set internal parameter/method '{key}' -- ignored, try method 'ptsu'.", silent=False)  # always print 'ignored'
             elif key in self._internal_pardict:  # It has a history, so check type.
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"Setting existing parameter '{key}' to <{__ptu__.val}> [was <{__ptu__.oldval}>]", silent=not self.ptverbose)
-                if self._internal_pardict[key] == self._internal_self_type:  # Set via ptinit so doesn't have a type yet.
+                __log__.post(f"Setting existing parameter {__ptu__.msg}", silent=not self.ptverbose)
+                if self._internal_pardict[key] is None:  # Set via ptinit so doesn't have a type yet.
                     self._internal_pardict[key] = copy(__ptu__.type)
-                    __log__.post(f"Parameter '{key}' type initialized to <{__ptu__.tn}>", silent=not self.ptverbose)
                 elif type(val) != self._internal_pardict[key]:  # Types don't match
                     if self.pttype:  # ... and I care about types.
                         if self.pttypeerr:
@@ -167,41 +165,33 @@ class Parameters:
             else:  # New parameter and not in strict mode so just set it.
                 __ptu__.setattr(self, key, val)
                 self._internal_pardict[key] = copy(__ptu__.type)
-                __log__.post(f"Setting new parameter '{key}' to <{__ptu__.val}> of type <{__ptu__.tn}>", silent=not self.ptverbose)
+                __log__.post(f"Setting new parameter {__ptu__.msg}", silent=not self.ptverbose)
 
     def ptadd(self, **kwargs):
         """
         Add new parameters to the parameter tracking -- used to add new parameters if ptstrict is True.
 
-        If ptstrict is False, then this is equivalent to ptset except that type checking is ignored and there are fewer
-        messages.  It will reset the parameter type to new value type (unlike ptsu).
+        It also acts like a "replace" method -- the new one is changed in both value and type.
 
         Parameters
         ----------
         kwargs : key, value pairs
-            Parameters to add
+            Parameters to add/replace
 
         """
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:  # Internal only, so ignore.
-                __log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored.", silent=False)  # always print 'ignored'
-            elif key in self._internal_pardict:  # Already exists, so replace it.
+                __log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored, try 'ptsu'.", silent=False)  # always print 'ignored'
+            else:
+                action = "Replacing" if key in self._internal_pardict else "Adding"
                 __ptu__.setattr(self, key, val)
-                __log__.post(f"Replacing parameter '{key}' with <{val}> of type <{__ptu__.tn}> [was <{__ptu__.oldval}> of type <{tn(self._internal_pardict[key])}>]",
-                             silent=not self.ptverbose)
-                self._internal_pardict[key] = copy(__ptu__.type)
-            else:  # New parameter, so add it.
-                __ptu__.setattr(self, key, val)
-                __log__.post(f"Adding new parameter '{key}' as <{val}> of type <{__ptu__.tn}>", silent=not self.ptverbose)
+                __log__.post(f"{action} parameter {__ptu__.msg}", silent=not self.ptverbose)
                 self._internal_pardict[key] = copy(__ptu__.type)
 
     def ptsu(self, **kwargs):
         """
-        This sets parameters with little checking and no errors.
-
-        This is the only way to set internal parameters if needed.  Same as ptadd except that existing internal parameters
-        can be set and type won't change, unlike ptadd.  Also, if the value is None, then the type is set to internal self 
-        type for future checking.
+        This is the only way to set internal parameters.  Other parameters are handled like ptadd except that it doesn't change the
+        type of existing parmaeters.
 
         Parameters
         ----------
@@ -232,15 +222,9 @@ class Parameters:
                     else:
                         setattr(self, key, val)
                         __log__.post(f"su: Setting internal parameter '{key}' to <{val}>", silent=not self.ptverbose)
-            elif val is None:  # Set without type checking but mark type as internal self type for future checking.
+            elif key in self._internal_pardict:
                 __ptu__.setattr(self, key, val)
-                self._internal_pardict[key] = self._internal_self_type  # mark type as internal self type for future checking
-                __log__.post(f"su: Initializing parameter '{key}' to <{__ptu__.val}> with internal self type", silent=not self.ptverbose)
-            elif key in self._internal_pardict and type(val) != self._internal_pardict[key]:  # Existing parameter of different type
-                __ptu__.setattr(self, key, val)
-                __log__.post(f"su: Replacing parameter '{key}' with <{__ptu__.val}> of different type <{__ptu__.tn}>, " \
-                             f"but retaining type <{tn(self._internal_pardict[key])}> [was <{__ptu__.oldval}> of type <{tn(__ptu__.oldval)}>]",
-                             silent=not self.ptverbose)
+                __log__.post(f"su: Changing '{key}' to <{__ptu__.val}> retaining ({__ptu__.tn})", silent=not self.ptverbose)
             else:  # Add it same as ptadd
                 self.ptadd(**{key: val})
 
@@ -278,7 +262,7 @@ class Parameters:
             elif isinstance(kval, list):
                 key = kval
             else:
-                __log__.post(f"Parameter names to delete must be strings or lists, got {tn(kval)}", silent=False)  # always print 'ignored'
+                __log__.post(f"Parameter names to delete must be strings or lists, got <{kval}> ({tn(kval)})", silent=False)  # always print 'ignored'
                 continue
             for k in key:
                 if k in self._internal_only_ptvar or k in self._internal_only_ptdef:
