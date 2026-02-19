@@ -31,6 +31,8 @@ Parameter Tracking: These are my parameters
 
 If used as a parent Class, then child Classes can define their own parameters in their __init__ methods before calling the parent Class __init__ method.  If additional checking is needed for specific parameters, then the child Class can override the `ptset` method to do custom checking, then call the parent Class _pt_set method to do the actual setting.
 
+NOTE THAT YOU HAVE TO RUN super().__init__ in a child class in order to initialize the internal param track variables.
+
 The arguments of `Parameters` are:
 
         Parameters

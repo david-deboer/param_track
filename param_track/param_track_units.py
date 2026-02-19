@@ -1,4 +1,3 @@
-from httpx import get
 from astropy import units as u
 from param_track.param_track_timetools import TUNITS, interpret_date
 from .param_track_support import listify, typename
@@ -37,7 +36,7 @@ for key, val in astropy_units.copy().items():
         astropy_units[new_key] = val
 
 all_units = list(builtin_units.keys()) + list(time_units.keys()) + \
-             list(timedelta_units.keys()) + list(astropy_units.keys())
+            list(timedelta_units.keys()) + list(astropy_units.keys())
 
 class Units:
     def __init__(self):
