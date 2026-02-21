@@ -73,6 +73,7 @@ class Units:
                     if a str, be a string with one entry e.g. ['kg'] or [float] or ['*']
                 a set with same format as list using curly brackets
                 a dict already in the full unit_handler format
+        If the unit_handler is a str, it will check for a file of that name and load if found.
 
         Internally, the unit_handler is a dict with key of the parameter name, but the val is a dict:
             islist: bool
@@ -94,6 +95,13 @@ class Units:
         if isinstance(unit_handler, dict):
             self.use_units = True
             self._parse_unit_handler(unit_handler, action=action)
+        elif isinstance(unit_handler, str):
+            from os.path import isfile
+            if isfile(unit_handler):
+                self.use_units = True
+                self.load_unit_handler(filename=unit_handler, action=action)
+            else:
+                raise FileNotFoundError(unit_handler)
         elif isinstance(unit_handler, (bool, type(None), int)):
             self.use_units = bool(unit_handler)  # This will toggle but not delete existing handler
         else:
@@ -202,3 +210,36 @@ class Units:
         elif val is not None:
             print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
             self.val = val
+
+    def save_unit_handler(self, filename):
+        """
+        Write the unit_handler to filename.
+        
+        This will likely be rare, since generally done from a ptinit file.
+
+        """
+        if filename.endswith('.json'):
+            import json
+            with open(filename, 'w') as fp:
+                json.dump(fp, self.unit_handler)
+        elif filename.endswith('.yaml') or filename.endswith('yml'):
+            import yaml
+            with open(filename, 'w') as fp:
+                yaml.dump(fp, self.unit_handler)
+
+    def load_unit_handler(self, filename, action='update'):
+        """
+        Load a unit_hander from filename.
+
+        This will likely be rare, since gnerally done from a ptinit file.
+
+        """
+        if filename.endswith('.json'):
+            import json
+            with open(filename, 'r') as fp:
+                unit_handler = json.load(fp)
+        elif filename.endswith('.yaml') or filename.endswith('yml'):
+            import yaml
+            with open(filename, 'r') as fp:
+                unit_handler = yaml.safe_load(fp)
+        self._parse_unit_handler(unit_handler=unit_handler, action=action)

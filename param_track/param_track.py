@@ -22,7 +22,7 @@ class Parameters:
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
                             '_internal_pardict'}
     _internal_only_ptdef = {'ptset', '_pt_set', 'ptinit', 'ptadd', 'ptsu', 'ptfrom',
-                            'ptget', 'ptdel', 'ptshow', 'ptlog', 'pt_to_dict'}
+                            'ptget', 'ptdel', 'ptshow', 'ptlog', 'ptto', 'pt_to_dict'}
 
     def __init__(self, ptnote='Parameter tracker class', ptinit='__ignore__',
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
@@ -441,3 +441,17 @@ class Parameters:
             self.ptsu(**data)
         else:
             print(f"Unknown option {use_option} (should be 'set', 'add' or 'su')")
+
+    def ptto(self, filename, include_par=None, as_row=False):
+        """
+        Write parameters to a file.  TBD support yaml, json, yaml, npy/z
+
+        If include_par == 'unit_handler' save the unit_handler to filename (json or yaml)
+
+        """
+        if include_par == 'unit_handler':
+            __ptu__.save_unit_handler(filename=filename)
+        else:
+            from param_track.param_track_io import to_file
+            __log__.post(f"Writing to file {filename}")
+            to_file(self, filename=filename, include_par=include_par, as_row=as_row)

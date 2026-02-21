@@ -1,6 +1,26 @@
 from param_track.param_track_support import ParameterTrackError
 
-def to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
+def to_file(data, filename, include_par=None, as_row=False):
+    if filename.endswith('.csv'):
+        _to_csv(data=data, filename=filename, include_par=include_par, as_row=as_row, include_header=True)
+    elif filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
+        _to_json_yaml(data=data, filename=filename, include_par=include_par)
+    elif filename.endswith('.npz') or filename.endswith('.npy'):
+        _to_npz(data=data, filename=filename, include_par=include_par)
+    raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+
+def _to_npz(data, filename, include_par=None):
+    this = data.pt_to_dict(serialize='pickle', include_par=include_par, what_to_dict='parameters')
+
+def _to_json_yaml(data, filename, include_par=None):
+    if filename.endswith('.json'):
+        import json
+        this = data.pt_to_dict(serialize='json', include_par=include_par, what_to_dict='parameters')
+    elif filename.endswith('.yaml'):
+        import yaml
+        this = data.pt_to_dict(serialize='yaml', include_par=include_par, what_to_dict='parameters')
+
+def _to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
     """
     Return the current parameters as a CSV string.
 
@@ -25,7 +45,7 @@ def to_csv(data, filename=None, include_par=None, as_row=False, include_header=F
     import io
     import json
     
-    this = data.pt_to_dict(serialize='json', include_par=include_par, types_to_dict=False)
+    this = data.pt_to_dict(serialize='json', include_par=include_par, what_to_dict='parameters')
 
     buf = io.StringIO()
     writer = csv.writer(buf)
