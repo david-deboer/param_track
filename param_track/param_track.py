@@ -16,14 +16,14 @@ __log__ = Log()
 
 class Parameters:
     """
-    General parameter tracking class to keep track of groups of parameters within a class with 
-    some minor checking and viewing.
+    General parameter tracking class to handle groups of parameters as a class with some minor checking of
+    existence and of type.
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
                             '_internal_pardict'}
     _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptdel', 'ptshow', 'ptsu', 'ptlog',
-                            'pt_to_dict', 'pt_to_csv', 'pt_from', '_pt_from_csv'}
+                            'pt_to_dict', 'pt_from'}
 
     def __init__(self, ptnote='Parameter tracker class', ptinit='__ignore__',
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
@@ -230,7 +230,7 @@ class Parameters:
 
     def ptget(self, key, default=ParameterTrackError):
         """
-        Get the value of a parameter.
+        Get the value of a parameter.  It will error if not present unless a default value is provided.
 
         Parameters
         ----------

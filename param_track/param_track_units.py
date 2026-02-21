@@ -4,7 +4,7 @@ from .param_track_support import listify, typename
 from copy import copy
 
 
-builtin_units = {  # Not units, but included for completeness
+builtin_units = {  # Not units, but included
     'float': float,
     'int': int,
     'str': str,
