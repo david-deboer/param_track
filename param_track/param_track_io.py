@@ -49,7 +49,7 @@ def from_file(filename, as_row=False, use_key=None):
     """
     Set parameters from a file, depending on the format of the file.
 
-    Currently csv, json and yaml formats are supported.
+    Currently csv, json, yaml and npy/z formats are supported.
 
     If json or yaml, then the file may have one of two formats (or mixture of the two):
     1 - key-value pairs of parameters to be set, e.g.:

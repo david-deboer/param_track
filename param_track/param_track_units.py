@@ -5,10 +5,21 @@ from copy import copy
 
 
 builtin_units = {  # Not units, but included
+    float: float,
     'float': float,
+    int: int,
     'int': int,
+    str: str,
     'str': str,
+    bool: bool,
     'bool': bool,
+    dict: dict,
+    'dict': dict,
+    list: list,
+    'list': list,
+    set: set,
+    'set': set,
+    complex: complex,
     'complex': complex
 }
 time_units = {  # Also, not units
@@ -46,6 +57,29 @@ class Units:
 
     def handle_units(self, unit_handler, action='reset'):
         """
+        This sets using units and the unit_handler.
+
+        If the supplied unit_handler is a bool, None or int it will evaluate as a bool to set using units on or off.
+
+        The supplied unit_handler is handled in the _parse_unit_handler method.
+        
+        If the unit_handler is a dict, it will set using units to on, and make the Class unit_handler:
+            The unit_handler is a dict with keys the parameter name and the value the unit/type to be used.
+            The unit/type is a str or instance type or dict that must be one of:
+                an '*' to indicate it can be any thing (so bascially ignore)
+                in the 'all_units' list above
+                a list by one or two methods (list elements must be of the same unit/type):
+                    if a str, enclose a unit/type str in square brackets e.g. '[kg]' or '[float]' or '[*]'
+                    if a str, be a string with one entry e.g. ['kg'] or [float] or ['*']
+                a set with same format as list using curly brackets
+                a dict already in the full unit_handler format
+
+        Internally, the unit_handler is a dict with key of the parameter name, but the val is a dict:
+            islist: bool
+            isset: bool
+            type: one of the types in 'all_list' above
+        This is built in _parse_unit_handler
+
         Parameters
         ----------
         unit_handler : dict or bool or None
@@ -55,7 +89,7 @@ class Units:
             If unit_handler is a dict, then this determines what to do with existing parameters
                 'reset' will reset the existing unit handler.
                 'update' will update the existing unit handler.
-
+                 
         """
         if isinstance(unit_handler, dict):
             self.use_units = True
@@ -76,15 +110,30 @@ class Units:
             raise ValueError(f"Invalid action for unit handler parsing: {action}. Must be 'reset' or 'update'.")
         _uh = {}
         for key, val in unit_handler.items():
-            is_list = True if val[0] == '[' else False
-            val = val.strip('[]') if isinstance(val, str) else val
-            if val in all_units:
-                _uh[key] = f"[{val}]" if is_list else val
+            _uh[key] = {'islist': False, 'isset': False, 'type': None}
+            if isinstance(val, list):
+                _uh[key]['islist'] = True
+                _uh[key]['type'] = val[0]
+            elif isinstance(val, set):
+                _uh[key]['isset'] = True
+                _uh[key]['type'] = val[0]
+            elif isinstance(val, str):
+                if val[0] == '[':
+                    _uh[key]['islist'] = True
+                elif val[0] == '{':
+                    _uh[key]['isset'] = True
+                _uh[key]['type'] = val.strip('[]').strip('{}')
+            elif isinstance(val, type):
+                _uh[key]['type'] = val
+            elif isinstance(val, dict):
+                if 'islist' in val and 'isset' in val and 'type' in val:
+                    _uh = copy(val)
+                else:
+                    raise ValueError("A unit_handler dict must be in full format")
             else:
-                for kk, vv in builtin_units.items():
-                    if val == vv:
-                        _uh[key] = f"[{kk}]" if is_list else kk
-                        break
+                raise ValueError(f"Invalid unit/type {val}")
+            if _uh[key]['type'] not in all_units:
+                raise ValueError(f"{_uh[key]['type']} not valid")
         if action == 'reset':
             self.unit_handler = _uh
         elif action == 'update':
@@ -92,7 +141,6 @@ class Units:
         self.valid_unit_handler = True
 
     def setattr(self, obj, key, val):
-        self.unit = None
         self.oldval = copy(getattr(obj, key, None))
         self.oldtype = obj._internal_pardict.get(key, None)
         if not self.use_units:
@@ -100,8 +148,7 @@ class Units:
         elif not self.valid_unit_handler:
             self.val = val
         elif key in self.unit_handler:
-            self.unit = self.unit_handler[key]
-            self.val = self._make_quantity(val, self.unit)
+            self._make_quantity(key, val)
         else:
             self.val = val
         self.type = None if self.val is None else type(self.val)
@@ -114,46 +161,44 @@ class Units:
                 self.msg += f" ({typename(self.oldtype)})"
             self.msg += "]"
 
-    def _make_quantity(self, val, unit):
-        if unit == '*' or not isinstance(unit, (str, type)):
-            return val
-        is_list = False
-        if str(unit[0]) == '[' or isinstance(val, list):
-            is_list = True
-            unit = unit.strip('[]')
-        if unit in builtin_units:
+    def _make_quantity(self, key, val):
+        unit = self.unit_handler[key]['type']
+        if unit is None or unit == '*':
+            self.val = val
+        elif unit in builtin_units:
             try:
-                if is_list:
-                    return listify(val, dtype=builtin_units[unit])
+                if self.unit_handler[key]['islist'] or self.unit_handler[key]['isset']:
+                    val = listify(val, dtype=builtin_units[unit])
+                    self.val = set(self.val) if self.unit_handler[key]['isset'] else val
                 else:
-                    return builtin_units[unit](val)
+                    self.val = builtin_units[unit](val)
             except:
                 if val is not None:
                     print(f"param_track_units warning: could not convert value <{val}> to type <{unit}>.")
-                return val
-        if unit in time_units or unit in timedelta_units:
+                self.val = val
+        elif unit in time_units or unit in timedelta_units:
             try:
-                if is_list:
+                if self.unit_handler[key]['islist'] or self.unit_handler[key]['isset']:
                     val = [interpret_date(x, fmt=unit) for x in listify(val)]
-                    return val
+                    self.val = set(val) if self.unit_handler[key]['isset'] else val
                 else:
-                    return interpret_date(val, fmt=unit)
+                    self.val = interpret_date(val, fmt=unit)
             except:
                 if val is not None:
                     print(f"param_track_units warning: could not convert value <{val}> to Time.")
                     print("Returning original value...???")
-                return val
-        if unit in astropy_units:
+                self.val = val
+        elif unit in astropy_units:
             try:
-                if is_list:
+                if self.unit_handler[key]['islist'] or self.unit_handler[key]['isset']:
                     val = u.Quantity(listify(val), unit)
+                    self.val = set(val) if self.unit_handler[key]['isset'] else val
                 else:
-                    val = u.Quantity(val, unit)
+                    self.val = u.Quantity(val, unit)
             except:
                 if val is not None:
                     print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
-            return val
-
-        if val is not None:
+                self.val = val
+        elif val is not None:
             print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
-        return val
+            self.val = val

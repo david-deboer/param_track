@@ -430,9 +430,9 @@ class Parameters:
                 __log__.post("Using 'as_row' option.", silent=self.ptverbose)
             else:
                 __log__.post(f"Warning: 'as_row' option is only applicable for CSV files, ignoring 'as_row' for {filename}", silent=False)  # always print 'ignored'
-        data, units = from_file(filename, use_key=use_key, as_row=as_row)
-        if units:
-            self.ptsu(ptsetunits=units)
+        data, unit_handler = from_file(filename, use_key=use_key, as_row=as_row)
+        if isinstance(unit_handler, dict):
+            self.ptsu(ptsetunits=unit_handler)
         if use_option == 'add':
             self.ptadd(**data)
         elif use_option == 'set':
