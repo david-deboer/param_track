@@ -50,12 +50,11 @@ class Units:
         ----------
         unit_handler : dict or bool or None
             If dict, then this is the unit handler to be used. Keys are parameter names, values are unit strings.
-            If bool/None/int, then this sets the use of units but does not change the existing unit handler.
-            If other, then this turns off the use of units but does not change the existing unit handler.
+            If bool/None/int, then this sets the use_units as bool(.) but does not change the existing unit handler.
         action : str
             If unit_handler is a dict, then this determines what to do with existing parameters
-            'reset' will reset the existing unit handler.
-            'update' will update the existing unit handler.
+                'reset' will reset the existing unit handler.
+                'update' will update the existing unit handler.
 
         """
         if isinstance(unit_handler, dict):
@@ -64,7 +63,7 @@ class Units:
         elif isinstance(unit_handler, (bool, type(None), int)):
             self.use_units = bool(unit_handler)  # This will toggle but not delete existing handler
         else:
-            self.use_units = False
+            raise ValueError(f"Invalid unit_handler input {unit_handler}")
 
     def _parse_unit_handler(self, unit_handler, action='reset'):
         """
@@ -73,6 +72,8 @@ class Units:
         Valid are those in builtin_units, time_units, timedelta_units, and astropy_units or in built_units values (i.e. actual types).
         
         """
+        if action not in ['reset', 'update']:
+            raise ValueError(f"Invalid action for unit handler parsing: {action}. Must be 'reset' or 'update'.")
         _uh = {}
         for key, val in unit_handler.items():
             is_list = True if val[0] == '[' else False
@@ -88,8 +89,6 @@ class Units:
             self.unit_handler = _uh
         elif action == 'update':
             self.unit_handler.update(_uh)
-        else:
-            raise ValueError(f"Invalid action for unit handler parsing: {action}. Must be 'reset' or 'update'.")
         self.valid_unit_handler = True
 
     def setattr(self, obj, key, val):

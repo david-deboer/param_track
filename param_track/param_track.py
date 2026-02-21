@@ -4,7 +4,6 @@
 
 
 """General simple parameter tracking module."""
-from param_track.param_track_io import from_file
 from .param_track_support import ParameterTrackError, Log, typemsg, check_serialize
 from .param_track_support import typename as tn
 from copy import copy
@@ -22,8 +21,8 @@ class Parameters:
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
                             '_internal_pardict'}
-    _internal_only_ptdef = {'_pt_set', 'ptinit', 'ptset', 'ptget', 'ptadd', 'ptdel', 'ptshow', 'ptsu', 'ptlog',
-                            'pt_to_dict', 'pt_from'}
+    _internal_only_ptdef = {'ptset', '_pt_set', 'ptinit', 'ptadd', 'ptsu', 'ptfrom',
+                            'ptget', 'ptdel', 'ptshow', 'ptlog', 'pt_to_dict'}
 
     def __init__(self, ptnote='Parameter tracker class', ptinit='__ignore__',
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
@@ -64,16 +63,15 @@ class Parameters:
         Methods
         -------
         ptset : set parameters (with checking)
-        ptinit : initialize parameters from a list of keys to default value (don't set type yet)
+        ptinit : initialize parameters from a list of keys to default value or with a file
         ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
         ptdel : delete parameters
-        ptsu : set parameters silently and can change internal parameters listed above (no checking, log entries or errors)
+        ptsu : set parameters silently and can change internal parameters
         ptshow : show current parameters being tracked
         ptlog : show or return the Log object
         pt_to_dict : return current parameters as a dictionary (or serialized form), plus options for types or internal parameters
-        pt_to_csv : return current parameters as a CSV string
-        pt_from : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
+        ptfrom : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
 
         """
         from . import __version__
@@ -91,7 +89,9 @@ class Parameters:
 
     def ptinit(self, param_list, default=None):
         """
-        Initialize parameters to 'default' from a list of keys or a filename via ptsu method.
+        Initialize parameters to 'default' from a list of keys (or a filename) via ptsu method.
+
+        if a filename is given, the 'default' is ignored (i.e. values used from the file) - see README.md for file formats.
 
         If the default value is not None, then the parameters will be initialized to this value and the type set to the type of this value.
         If the default value is None, then the parameters will be initialized to None and the type will be set None as a marker for
@@ -100,11 +100,11 @@ class Parameters:
         Parameters
         ----------
         param_list : list of str, csv-list or str
-            List of keys to initialize parameters or filename[:key].  If a filename is given, then parameters will be initialized from the file
+            List of keys to initialize or filename[:key].  If a filename is given, then parameters will be initialized from the file
             (CSV, JSON, YAML, NPZ/Y formats supported, set by filename extension).  If a key is given after a colon, then only that key will be used
-            from the file (e.g. for YAML files with multiple keys).
+            from the file (e.g. for YAML files with multiple keys).  See README.md for file format.
         default : any
-            Default value to set for each parameter (default is None)
+            Default value to set for each parameter (default is None), ignored if file is used
 
         """
         if isinstance(param_list, str):
@@ -112,7 +112,7 @@ class Parameters:
             from os.path import isfile
             if isfile(inp[0]):
                 use_key = inp[1] if len(inp) > 1 else None
-                self.pt_from(inp[0], use_key=use_key, use_option='su', as_row=False)
+                self.ptfrom(inp[0], use_key=use_key, use_option='su', as_row=False)
                 return
             else:
                data = {x.strip(): default for x in param_list.split(',')}
@@ -127,26 +127,52 @@ class Parameters:
 
     def ptset(self, **kwargs):
         """
-        Show or set the parameters -- this is the wrapper around the "workhorse" method _pt_set.
+        Set parameters -- this is the wrapper around the "workhorse" method _pt_set.
 
         If parameter tracking is used as a parent Class, then this can be redefined for custom behavior, then
-        call the _pt_set method to do the actual setting.  Could call it 'update' there, instead of ptset.
-
-        _pt_set checks for internal only variables/methods (ignores) and handles strict mode and verbosity.  This checks
-        against the 'ptstrict' and 'pttype' parameters.  Behavior is regulated by 'pterr' and 'pttypeerr' parameters.
+        call the _pt_set method to do the actual setting.  In a parent class, one could call this function 'set'
+        or 'update'.
+        
+        See the method _pt_set for the behavior.  The methods ptadd and ptsu provide for other ways to intereact
+        with the parameters.
+        
+        ptinit is also available for initialization (meant to be called once on startup).
+        ptfrom will add variables from a file
 
         """
         self._pt_set(**kwargs)
 
     def _pt_set(self, **kwargs):
-        """See ptset docstring."""
+        """
+        This is the standard way to set parameters (see also ptadd and ptsu).
+
+        Behavior:
+        - if the parameter is one of the internal ones (_internal_only_ptvar, _internal_only_ptdef) the request is IGNORED
+        - if the parameter already exists, the value is set, followed by type-checking per below:
+            - if the value is None, type checking is IGNORED
+            - if the preexisting type is None, then the type is reset silently to the type of value
+            - if the type of the value and the preexisting type match, nothing else happens
+            - if they don't match, what happens depends on the internal variables pttype and pttypeerr
+                - if pttype is False, the type just gets reset to the value type
+                - if pttype is True and 
+                    - if pttypeerr is True, a ParameterTrackError is raised
+                    - if pttypeerr is False, it gives a warning and does NOT reset the type
+        - if the parameter doesn't already exist, what happens depends on the value of ptstrict
+            - if ptstrict is True, what happens depends on the value of pterr
+                - if pterr is True, a ParameterTrackError is raised
+                - if pterr is False, a warning is printed and the request is IGNORED
+            if ptstrict is False, the value and type are set
+
+        """
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
                 __log__.post(f"Attempt to set internal parameter/method '{key}' -- ignored, try method 'ptsu'.", silent=False)  # always print 'ignored'
-            elif key in self._internal_pardict:  # It has a history, so check type.
+            elif key in self._internal_pardict:  # It has a history, so set and then check type.
                 __ptu__.setattr(self, key, val)
                 __log__.post(f"Setting existing parameter {__ptu__.msg}", silent=not self.ptverbose)
-                if self._internal_pardict[key] is None:  # None always gets updated type
+                if val is None:  # A value of None ignores types
+                    continue
+                elif self._internal_pardict[key] is None:  # None always gets updated type
                     self._internal_pardict[key] = copy(__ptu__.type)
                 elif type(val) != self._internal_pardict[key]:  # Types don't match
                     if self.pttype:  # ... and I care about types.
@@ -156,7 +182,7 @@ class Parameters:
                             __log__.post(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'retain'), silent=False)  # since I care about types
                     else:  # ... but I don't care about types.
                         self._internal_pardict[key] = copy(__ptu__.type)  # so I'll just reset it to new type
-                        __log__.post(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'reset'), silent=True)  # silent since I don't care about types
+                        __log__.post(typemsg(key, self._internal_pardict[key], __ptu__.tn, 'reset'), silent=not self.ptverbose)
             elif self.ptstrict:  # Key is unknown and strict mode is on.
                 if self.pterr:
                     raise ParameterTrackError(f"Unknown parameter '{key}' in strict mode.")
@@ -171,7 +197,8 @@ class Parameters:
         """
         Add new parameters to the parameter tracking -- used to add new parameters if ptstrict is True.
 
-        It also acts like a "replace" method -- the new one is changed in both value and type.
+        It also acts like a "replace" method -- the new one is changed in both value and type. The behavior is to always change the
+        value and type (except for the internal variables in _internal_only_ptvar, _internal_only_ptdef, which are IGNORED)
 
         Parameters
         ----------
@@ -190,8 +217,9 @@ class Parameters:
 
     def ptsu(self, **kwargs):
         """
-        This is the only way to set internal parameters.  Other parameters are handled like ptadd except that it doesn't change the
-        type of existing parmaeters.
+        This is the only way to set internal parameters.  Other parameters are handled using ptadd.
+
+        The order is ptverbose, ptsetunits, ptnote, then others in order provided.
 
         Parameters
         ----------
@@ -202,13 +230,13 @@ class Parameters:
         if 'ptverbose' in kwargs:
             self.ptverbose = bool(kwargs.pop('ptverbose'))
             __log__.post(f"su: Setting internal parameter 'ptverbose' to <{self.ptverbose}>", silent=not self.ptverbose)
-        if 'ptnote' in kwargs:  # always allow ptnote to be set
-            self.ptnote = bool(kwargs.pop('ptnote'))
-            __log__.post(f"su: Setting internal parameter 'ptnote' to <{self.ptnote}>", silent=not self.ptverbose)
         if 'ptsetunits' in kwargs:
             __ptu__.handle_units(kwargs.pop('ptsetunits'))
             self.ptsetunits = __ptu__.use_units
             __log__.post(f"su: Setting internal parameter 'ptsetunits' to <{self.ptsetunits}>", silent=not self.ptverbose)
+        if 'ptnote' in kwargs:  # always allow ptnote to be set
+            self.ptnote = bool(kwargs.pop('ptnote'))
+            __log__.post(f"su: Setting internal parameter 'ptnote' to <{self.ptnote}>", silent=not self.ptverbose)
 
         for key, val in kwargs.items():
             if key in self._internal_only_ptdef:  # Internal method, so ignore.
@@ -218,13 +246,10 @@ class Parameters:
                     __log__.post(f"su: Attempt to set internal parameter '{key}' -- ignored.", silent=False)  # always print 'ignored'
                 else:  # public internal variable, so only allow bools to be set
                     if type(val) != bool:
-                        __log__.post(f"su: Internal parameter '{key}' should be bool -- ignored.", silent=False)  # always print 'ignored'
+                        __log__.post(f"su: Internal parameter '{key}' must be bool -- ignored.", silent=False)  # always print 'ignored'
                     else:
                         setattr(self, key, val)
                         __log__.post(f"su: Setting internal parameter '{key}' to <{val}>", silent=not self.ptverbose)
-            elif key in self._internal_pardict:
-                __ptu__.setattr(self, key, val)
-                __log__.post(f"su: Changing '{key}' to <{__ptu__.val}> retaining ({__ptu__.tn})", silent=not self.ptverbose)
             else:  # Add it same as ptadd
                 self.ptadd(**{key: val})
 
@@ -258,13 +283,13 @@ class Parameters:
         """
         for kval in args:
             if isinstance(kval, str):
-                key = [x.strip() for x in kval.split(',')]
+                keys = [x.strip() for x in kval.split(',')]
             elif isinstance(kval, list):
-                key = kval
+                keys = kval
             else:
                 __log__.post(f"Parameter names to delete must be strings or lists, got <{kval}> ({tn(kval)})", silent=False)  # always print 'ignored'
                 continue
-            for k in key:
+            for k in keys:
                 if k in self._internal_only_ptvar or k in self._internal_only_ptdef:
                     __log__.post(f"Attempt to delete internal parameter/method '{k}' -- ignored.", silent=False)  # always print 'ignored'
                 elif k in self._internal_pardict:
@@ -297,14 +322,14 @@ class Parameters:
         """
         show = f"Parameter Tracking: {self.ptnote}\n"
         show += '-'*(len(show)-1) + "\n"
-        show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=False)
+        show += self.pt_to_dict(serialize='yaml', include_par=include_par, what_to_dict="parameters")
         if show_all:
             show += "\nParameter types:\n"
             show += '-'*len("Parameter types:") + "\n"
-            show += self.pt_to_dict(serialize='yaml', include_par=include_par, types_to_dict=True)
+            show += self.pt_to_dict(serialize='yaml', include_par=include_par, what_to_dict="types")
             show += "\nInternal parameters:\n"
             show += '-'*len("Internal parameters:") + "\n"
-            show += self.pt_to_dict(serialize='yaml', types_to_dict="__internal__")
+            show += self.pt_to_dict(serialize='yaml', what_to_dict="internal")
         if return_only:
             return show
         print(show)
@@ -334,7 +359,7 @@ class Parameters:
         else:
             print(f"Unknown 'ptlog' action '{action}'.")
 
-    def pt_to_dict(self, serialize=None, include_par=None, types_to_dict=False):
+    def pt_to_dict(self, serialize=None, include_par=None, what_to_dict="parameters"):
         """
         Return the current parameters as a dictionary.
 
@@ -347,9 +372,8 @@ class Parameters:
             If None, then return dictionary
         include_par : csv-list, list of str or None
             If not None, then only include these parameters in the output dictionary
-        types_to_dict : bool or '__internal__'
-            If True, then return the types of the parameters instead of their values
-            If '__internal__', then return the internal parameters instead of the tracked parameters
+        what_to_dict : one of 'parameters', 'types', 'internal' (first letter is all that is needed)
+            return requested set
 
         Returns
         -------
@@ -358,17 +382,14 @@ class Parameters:
 
         """
         rec = {}
-        if isinstance(types_to_dict, str) and types_to_dict == "__internal__":  # internal parameters only
+        if what_to_dict[0].lower() == "i":  # internal parameters only
             include_par = [x for x in self._internal_only_ptvar if x[0]!= '_']
-            types_to_dict = False  # ignore types_to_dict for internal
         else: # normal parameters or types
-            include_par = self._internal_pardict.keys() if include_par is None else include_par
+            include_par = list(self._internal_pardict.keys()) if include_par is None else include_par
             if isinstance(include_par, str):
                 include_par = [x.strip() for x in include_par.split(',')]
         for key in include_par:
-            val = copy(getattr(self, key))
-            if types_to_dict:
-                val = self._internal_pardict.get(key)
+            val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else copy(getattr(self, key))
             rec[key] = check_serialize(serialize, val)
         if serialize == 'json':
             import json
@@ -381,7 +402,7 @@ class Parameters:
             return pickle.dumps(rec)
         return rec
     
-    def pt_from(self, filename, use_key=None, use_option='add', as_row=False):
+    def ptfrom(self, filename, use_key=None, use_option='add', as_row=False):
         """
         Set parameters from a file, depending on the format of the file.
 
@@ -419,4 +440,4 @@ class Parameters:
         elif use_option == 'su':
             self.ptsu(**data)
         else:
-            print("Unknown option 'use_option'")
+            print(f"Unknown option {use_option} (should be 'set', 'add' or 'su')")

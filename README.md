@@ -1,6 +1,6 @@
 # Parameter Tracking
 
-General parameter tracking class to keep track of groups of parameters within a class with some minor checking and viewing - typically will only use the wrapper functions `ptset` and `ptshow`.
+General parameter tracking class to keep track of groups of parameters within a class with some minor checking and viewing - typically will only use the wrapper function `ptset` and `ptshow`.
 
 Installed as:
 
