@@ -347,7 +347,7 @@ class Parameters:
             show += self.pt_to_dict(serialize='yaml', what_to_dict="internal")
         if return_only:
             return show
-        print(show)
+        __log__.post(show, silent=False)
     
     def ptlog(self, action='show', search=None):
         """
