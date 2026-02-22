@@ -11,6 +11,7 @@ def to_file(data, filename, include_par=None, as_row=False):
 
 def _to_npz(data, filename, include_par=None):
     this = data.pt_to_dict(serialize='pickle', include_par=include_par, what_to_dict='parameters')
+    print("NEED TO FINISH _to_npz format")
 
 def _to_json_yaml(data, filename, include_par=None):
     if filename.endswith('.json'):
@@ -19,6 +20,8 @@ def _to_json_yaml(data, filename, include_par=None):
     elif filename.endswith('.yaml'):
         import yaml
         this = data.pt_to_dict(serialize='yaml', include_par=include_par, what_to_dict='parameters')
+    with open(filename, 'w') as fp:
+        fp.write(this)
 
 def _to_csv(data, filename=None, include_par=None, as_row=False, include_header=False):
     """

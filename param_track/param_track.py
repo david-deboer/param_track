@@ -64,14 +64,15 @@ class Parameters:
         -------
         ptset : set parameters (with checking)
         ptinit : initialize parameters from a list of keys to default value or with a file
-        ptget : get parameter value
         ptadd : add new parameters (only way to add new parameters in strict mode)
+        ptfrom : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
+        ptget : get parameter value
         ptdel : delete parameters
         ptsu : set parameters silently and can change internal parameters
         ptshow : show current parameters being tracked
         ptlog : show or return the Log object
+        ptto : write parameters to a file (CSV, JSON or YAML formats supported, set by filename extension)
         pt_to_dict : return current parameters as a dictionary (or serialized form), plus options for types or internal parameters
-        ptfrom : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
 
         """
         from . import __version__
@@ -389,7 +390,10 @@ class Parameters:
             if isinstance(include_par, str):
                 include_par = [x.strip() for x in include_par.split(',')]
         for key in include_par:
-            val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else copy(getattr(self, key))
+            if key not in self._internal_pardict:
+                __log__.post(f"Parameter '{key}' not found in parameter tracking -- ignored in output.", silent=False)  # always print 'ignored'
+                continue
+            val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else self.ptget(key)
             rec[key] = check_serialize(serialize, val)
         if serialize == 'json':
             import json
@@ -431,7 +435,7 @@ class Parameters:
             else:
                 __log__.post(f"Warning: 'as_row' option is only applicable for CSV files, ignoring 'as_row' for {filename}", silent=False)  # always print 'ignored'
         data, unit_handler = from_file(filename, use_key=use_key, as_row=as_row)
-        if isinstance(unit_handler, dict):
+        if isinstance(unit_handler, dict) and len(unit_handler) > 0:
             self.ptsu(ptsetunits=unit_handler)
         if use_option == 'add':
             self.ptadd(**data)
