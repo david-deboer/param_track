@@ -365,6 +365,7 @@ class Parameters:
         """
         if action == 'show':
             __log__.show(search=search)
+            print('===')
             __ptu__.log.show(search=search)
         elif action == 'clear':
             __log__.log = []

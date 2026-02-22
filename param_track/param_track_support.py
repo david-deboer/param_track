@@ -39,8 +39,9 @@ class Log:
             print(message)
 
     def show(self, file=None, search=None):
-        print("Log", file=file)
-        print("---", file=file)
+        hdr = f"Log: {self.module}"
+        print(hdr, file=file)
+        print("-" * len(hdr), file=file)
         for entry in self.log:
             if search is None:
                 print(entry, file=file)
