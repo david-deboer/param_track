@@ -1,7 +1,11 @@
 from astropy import units as u
 from param_track.param_track_timetools import TUNITS, interpret_date
+from .param_track_support import Log
 from .param_track_support import listify, typename
 from copy import copy
+
+
+__log__ = Log(__name__)
 
 
 builtin_units = {  # Not units, but included
@@ -55,6 +59,9 @@ class Units:
         self.use_units = False
         self.unit_handler = None
         self.valid_unit_handler = False
+
+    def __ptuaccess__log__(self):
+        self.log = __log__
 
     def handle_units(self, unit_handler, action='reset'):
         """
@@ -183,7 +190,7 @@ class Units:
                     self.val = builtin_units[unit](val)
             except:
                 if val is not None:
-                    print(f"param_track_units warning: could not convert value <{val}> to type <{unit}>.")
+                    __log__.post(f"param_track_units warning: could not convert value <{val}> to type <{unit}>.", silent=False)
                 self.val = val
         elif unit in time_units or unit in timedelta_units:
             try:
@@ -194,8 +201,8 @@ class Units:
                     self.val = interpret_date(val, fmt=unit)
             except:
                 if val is not None:
-                    print(f"param_track_units warning: could not convert value <{val}> to Time.")
-                    print("Returning original value...???")
+                    __log__.post(f"param_track_units warning: could not convert value <{val}> to Time.", silent=False)
+                    __log__.post("Returning original value...???", silent=False)
                 self.val = val
         elif unit in astropy_units:
             try:
@@ -206,10 +213,10 @@ class Units:
                     self.val = u.Quantity(val, unit)
             except:
                 if val is not None:
-                    print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
+                    __log__.post(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.", silent=False)
                 self.val = val
         elif val is not None:
-            print(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.")
+            __log__.post(f"param_track_units warning: could not convert value <{val}> to Quantity with unit <{unit}>.", silent=False)
             self.val = val
 
     def save_unit_handler(self, filename):

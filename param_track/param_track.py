@@ -10,7 +10,7 @@ from copy import copy
 from param_track import param_track_units
 
 __ptu__ = param_track_units.Units()
-__log__ = Log()
+__log__ = Log(__name__)
 
 
 class Parameters:
@@ -100,6 +100,7 @@ class Parameters:
 
     def __ptaccess__log__(self):
         self.log = __log__
+        __ptu__.__ptuaccess__log__()
 
     def ptinit(self, param_list, default=None):
         """
@@ -368,11 +369,11 @@ class Parameters:
         elif action == 'clear':
             __log__.log = []
         elif action == 'dump':
-            print("Dumping log to 'param_track_log.txt'")
+            __log__.post("Dumping log to 'param_track_log.txt'", silent=False)
             with open('param_track_log.txt', 'w') as fp:
                 __log__.show(file=fp, search=search)
         else:
-            print(f"Unknown 'ptlog' action '{action}'.")
+            __log__.post(f"Unknown 'ptlog' action '{action}'.", silent=False)
 
     def pt_to_dict(self, serialize=None, include_par=None, what_to_dict="parameters"):
         """
@@ -458,7 +459,7 @@ class Parameters:
         elif use_option == 'su':
             self.ptsu(**data)
         else:
-            print(f"Unknown option {use_option} (should be 'set', 'add' or 'su')")
+            __log__.post(f"Unknown option {use_option} (should be 'set', 'add' or 'su')", silent=False)
 
     def ptto(self, filename, include_par=None, as_row=False):
         """

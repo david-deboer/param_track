@@ -17,22 +17,24 @@ class ParameterTrackError(Exception):
 
 class LogEntry:
     """A single parameter track log entry."""
-    def __init__(self, message, silent):
+    def __init__(self, module, message, silent):
         self.time = datetime.now()
+        self.module = module
         self.silent = silent
         self.message = message
 
     def __str__(self):
-        return f"{self.time}  --  {self.message}"
+        return f"{self.module}  --  {self.time}  --  {self.message}"
 
 
 class Log:
     """Parameter track log handling."""
-    def __init__(self):
+    def __init__(self, module='Log'):
+        self.module = module
         self.log = []
 
     def post(self, message, silent=False):
-        self.log.append(LogEntry(message, silent))
+        self.log.append(LogEntry(self.module, message, silent))
         if not silent:
             print(message)
 
