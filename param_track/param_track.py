@@ -23,6 +23,13 @@ class Parameters:
                             '_internal_pardict'}
     _internal_only_ptdef = {'ptset', '_pt_set', 'ptinit', 'ptadd', 'ptsu', 'ptfrom',
                             'ptget', 'ptdel', 'ptshow', 'ptlog', 'ptto', 'pt_to_dict'}
+    ptnote = 'Uninitialized parameter tracking class'
+    ptstrict = False
+    pterr = False
+    ptverbose = True
+    pttype = False
+    pttypeerr = False
+    ptsetunits = False
 
     def __init__(self, ptnote='Parameter tracker class', ptinit='__ignore__',
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
@@ -87,6 +94,12 @@ class Parameters:
 
     def __repr__(self):
         return self.ptshow(return_only=True)
+    
+    def __ptaccess__ptu__(self):
+        self.ptu = __ptu__
+
+    def __ptaccess__log__(self):
+        self.log = __log__
 
     def ptinit(self, param_list, default=None):
         """
@@ -266,7 +279,7 @@ class Parameters:
             Default value to return if parameter not found, if not provided, then raise ParameterTrackError
         
         """
-        if key in self._internal_pardict:
+        if key in self._internal_pardict or key in self._internal_only_ptvar:
             return getattr(self, key)
         if default is ParameterTrackError:
             raise ParameterTrackError(f"Parameter '{key}' not found.")
@@ -335,7 +348,7 @@ class Parameters:
             return show
         print(show)
     
-    def ptlog(self, action='show'):
+    def ptlog(self, action='show', search=None):
         """
         Do stuff with the Log object.
 
@@ -351,12 +364,13 @@ class Parameters:
         if action == 'return':
             return __log__
         elif action == 'show':
-            __log__.show()
+            __log__.show(search=search)
         elif action == 'clear':
             __log__.log = []
         elif action == 'dump':
+            print("Dumping log to 'param_track_log.txt'")
             with open('param_track_log.txt', 'w') as fp:
-                __log__.show(file=fp)
+                __log__.show(file=fp, search=search)
         else:
             print(f"Unknown 'ptlog' action '{action}'.")
 
@@ -390,7 +404,7 @@ class Parameters:
             if isinstance(include_par, str):
                 include_par = [x.strip() for x in include_par.split(',')]
         for key in include_par:
-            if key not in self._internal_pardict:
+            if key not in self._internal_pardict and key not in self._internal_only_ptvar:  # if key is unknown, ignore it and print warning
                 __log__.post(f"Parameter '{key}' not found in parameter tracking -- ignored in output.", silent=False)  # always print 'ignored'
                 continue
             val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else self.ptget(key)

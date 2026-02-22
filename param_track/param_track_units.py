@@ -47,7 +47,8 @@ for key, val in astropy_units.copy().items():
         astropy_units[new_key] = val
 
 all_units = list(builtin_units.keys()) + list(time_units.keys()) + \
-            list(timedelta_units.keys()) + list(astropy_units.keys())
+            list(timedelta_units.keys()) + list(astropy_units.keys()) + \
+            ['*']
 
 class Units:
     def __init__(self):
@@ -78,7 +79,7 @@ class Units:
         Internally, the unit_handler is a dict with key of the parameter name, but the val is a dict:
             islist: bool
             isset: bool
-            type: one of the types in 'all_list' above
+            type: one of the types in 'all_units' above
         This is built in _parse_unit_handler
 
         Parameters
@@ -221,11 +222,11 @@ class Units:
         if filename.endswith('.json'):
             import json
             with open(filename, 'w') as fp:
-                json.dump(fp, self.unit_handler)
+                json.dump(self.unit_handler, fp)
         elif filename.endswith('.yaml') or filename.endswith('yml'):
             import yaml
             with open(filename, 'w') as fp:
-                yaml.dump(fp, self.unit_handler)
+                yaml.dump(self.unit_handler, fp)
 
     def load_unit_handler(self, filename, action='update'):
         """

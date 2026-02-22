@@ -11,7 +11,8 @@ def to_file(data, filename, include_par=None, as_row=False):
 
 def _to_npz(data, filename, include_par=None):
     this = data.pt_to_dict(serialize='pickle', include_par=include_par, what_to_dict='parameters')
-    print("NEED TO FINISH _to_npz format")
+    from numpy import savez
+    savez(filename, data=this)
 
 def _to_json_yaml(data, filename, include_par=None):
     if filename.endswith('.json'):
