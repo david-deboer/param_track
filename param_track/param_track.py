@@ -10,6 +10,7 @@ from copy import copy
 from param_track import param_track_units
 
 __ptu__ = param_track_units.Units()
+__ptu__.__ptuaccess__log__()
 __log__ = Log(__name__)
 
 
@@ -100,7 +101,6 @@ class Parameters:
 
     def __ptaccess__log__(self):
         self.log = __log__
-        __ptu__.__ptuaccess__log__()
 
     def ptinit(self, param_list, default=None):
         """
@@ -353,25 +353,28 @@ class Parameters:
         """
         Do stuff with the Log object.
 
+        Note, to have access to the Log Instance, use self.__ptaccess__log__()
+
         Parameters
         ----------
         action : str
-            'return' : return the Log object
             'show' : print the Log to stdout
             'clear' : clear the Log entries
             'dump' : dump the Log to a file 'param_track_log.txt'
 
         """
-        if action == 'return':
-            return __log__
-        elif action == 'show':
+        if action == 'show':
             __log__.show(search=search)
+            __ptu__.log.show(search=search)
         elif action == 'clear':
             __log__.log = []
+            __ptu__.log.log = []
         elif action == 'dump':
-            __log__.post("Dumping log to 'param_track_log.txt'", silent=False)
+            __log__.post("Dumping log to 'param_track_log.txt'/'param_track_units_log.txt'", silent=False)
             with open('param_track_log.txt', 'w') as fp:
                 __log__.show(file=fp, search=search)
+            with open('param_track_units_log.txt', 'w') as fp:
+                __ptu__.log.show(file=fp, search=search)
         else:
             __log__.post(f"Unknown 'ptlog' action '{action}'.", silent=False)
 
