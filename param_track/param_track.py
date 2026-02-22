@@ -250,7 +250,7 @@ class Parameters:
             self.ptsetunits = __ptu__.use_units
             __log__.post(f"su: Setting internal parameter 'ptsetunits' to <{self.ptsetunits}>", silent=not self.ptverbose)
         if 'ptnote' in kwargs:  # always allow ptnote to be set
-            self.ptnote = bool(kwargs.pop('ptnote'))
+            self.ptnote = kwargs.pop('ptnote')
             __log__.post(f"su: Setting internal parameter 'ptnote' to <{self.ptnote}>", silent=not self.ptverbose)
 
         for key, val in kwargs.items():
