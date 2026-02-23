@@ -55,7 +55,8 @@ all_units = list(builtin_units.keys()) + list(time_units.keys()) + \
             ['*']
 
 class Units:
-    def __init__(self):
+    def __init__(self, module):
+        self.module = module
         self.use_units = False
         self.unit_handler = None
         self.valid_unit_handler = False

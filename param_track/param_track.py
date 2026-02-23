@@ -9,7 +9,7 @@ from .param_track_support import typename as tn
 from copy import copy
 from param_track import param_track_units
 
-__ptu__ = param_track_units.Units()
+__ptu__ = param_track_units.Units(__name__)
 __ptu__.__ptuaccess__log__()
 __log__ = Log(__name__)
 
@@ -425,7 +425,7 @@ class Parameters:
             if key not in self._internal_pardict and key not in self._internal_only_ptvar:  # if key is unknown, ignore it and print warning
                 __log__.post(f"Parameter '{key}' not found in parameter tracking -- ignored in output.", silent=False)  # always print 'ignored'
                 continue
-            val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else self.ptget(key)
+            val = self._internal_pardict.get(key) if what_to_dict[0].lower() == 't' else self.ptget(key, None)
             rec[key] = check_serialize(serialize, val)
         if serialize == 'json':
             import json
