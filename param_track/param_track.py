@@ -31,8 +31,9 @@ class Parameters:
     pttype = False
     pttypeerr = False
     ptsetunits = False
+    _internal_pardict = {}
 
-    def __init__(self, ptnote='Parameter tracker class', ptinit='__ignore__',
+    def __init__(self, ptnote='Parameter tracker class', ptinit=None,
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
                  **kwargs):
         """
@@ -42,7 +43,8 @@ class Parameters:
         If used as a parent Class, then child Classes can define their own parameters in their __init__ methods
         before calling the parent Class __init__ method.  If additional checking is needed for specific parameters,
         then the child Class can override the 'ptset' method to do custom checking, then call the parent Class _pt_set
-        method to do the actual setting.
+        method to do the actual setting.  It is recommended to use super.__init__(...) in this case, but can also
+        use the method ptinit.
 
         Actions are tracked via the Log object.
         
@@ -50,8 +52,8 @@ class Parameters:
         ----------
         ptnote : str
             Note to describe the parameter tracking instance, used in ptshow
-        ptinit : str or csv-list
-            see ptinit method for details
+        ptinit : str or csv-list or None
+            if not None, calls ptinit with a default value of None
         ptstrict : bool
             Flag to make parameter setting strict (i.e. error or warn on unknown parameters)
         pterr : bool
@@ -63,7 +65,7 @@ class Parameters:
             Checks relative to the initial type set or when ptadd/ptsu was used.
         pttypeerr : bool
             Flag to make parameter setting raise ParameterTrackError on type change or just notice -- only used in ptset.
-        ptsetunits : bool
+        ptsetunits : bool or unit_handler
             Flag to set units when setting parameters (see param_track_units.py for details)
         kwargs : key, value pairs
             Initial parameters to set (if any)
@@ -71,7 +73,7 @@ class Parameters:
         Methods
         -------
         ptset : set parameters (with checking)
-        ptinit : initialize parameters from a list of keys to default value or with a file
+        ptinit : initialize parameters from a list of keys to default value or with a file ...
         ptadd : add new parameters (only way to add new parameters in strict mode)
         ptfrom : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
         ptget : get parameter value
@@ -86,12 +88,8 @@ class Parameters:
         from . import __version__
         __log__.post(f"Parameter Track:  version {__version__}", silent=True)
         __log__.post(f"Parameters tracking: {ptnote}.", silent=True)
-        self.ptsu(ptnote=ptnote, ptstrict=ptstrict, pterr=pterr, ptverbose=ptverbose,
-                  pttype=pttype, pttypeerr=pttypeerr, ptsetunits=ptsetunits)
-        self._internal_pardict = {}
-        if ptinit != '__ignore__':
-            self.ptinit(ptinit, default=None)
-        self.ptadd(**kwargs)
+        self.ptsu(ptnote=ptnote, ptinit=ptinit, ptstrict=ptstrict, pterr=pterr, ptverbose=ptverbose,
+                  pttype=pttype, pttypeerr=pttypeerr, ptsetunits=ptsetunits, **kwargs)
 
     def __repr__(self):
         return self.ptshow(return_only=True)
@@ -102,11 +100,18 @@ class Parameters:
     def __ptaccess__log__(self):
         self.log = __log__
 
-    def ptinit(self, param_list, default=None):
+    def ptinit(self, ptinit=[], default=None, **kwargs):
         """
-        Initialize parameters to 'default' from a list of keys (or a filename) via ptsu method.
+        Initialize parameters per the following:
+            - if the input variable 'ptinit' is a str, it check if it is a file[:key] and will use the file, otherwise it willa assume a csv-list
+            - if 'ptinit' is a list (or a str interpreted as a list per above), it will set that to the default value
+            - if 'ptinit' is a dict, it will set via the key-value pairs -- note that this is there for convenience, generally use ptadd or ptsu for this
+            - if 'ptinit' is None, nothing happens (helps with __init__)
+        The variables in 'ptinit' (and kwargs) are then set via the ptsu method
 
-        if a filename is given, the 'default' is ignored (i.e. values used from the file) - see README.md for file formats.
+        if a filename or dict are given, the 'default' is ignored (i.e. values used from the file) - see README.md for file formats.
+
+        kwargs are included for completeness and flexibility
 
         If the default value is not None, then the parameters will be initialized to this value and the type set to the type of this value.
         If the default value is None, then the parameters will be initialized to None and the type will be set None as a marker for
@@ -114,7 +119,7 @@ class Parameters:
 
         Parameters
         ----------
-        param_list : list of str, csv-list or str
+        ptinit : list of str, csv-list, str or None
             List of keys to initialize or filename[:key].  If a filename is given, then parameters will be initialized from the file
             (CSV, JSON, YAML, NPZ/Y formats supported, set by filename extension).  If a key is given after a colon, then only that key will be used
             from the file (e.g. for YAML files with multiple keys).  See README.md for file format.
@@ -122,22 +127,27 @@ class Parameters:
             Default value to set for each parameter (default is None), ignored if file is used
 
         """
-        if isinstance(param_list, str):
-            inp = param_list.split(':')
+        if ptinit is None:
+            return
+        if isinstance(ptinit, str):
+            inp = ptinit.split(':')
             from os.path import isfile
             if isfile(inp[0]):
                 use_key = inp[1] if len(inp) > 1 else None
                 self.ptfrom(inp[0], use_key=use_key, use_option='su', as_row=False)
                 return
             else:
-               data = {x.strip(): default for x in param_list.split(',')}
-        elif isinstance(param_list, list):
-            data = {key: default for key in param_list}
+               data = {x.strip(): default for x in ptinit.split(',')}
+        elif isinstance(ptinit, list):
+            data = {key: default for key in ptinit}
+        elif isinstance(ptinit, dict):
+            data = ptinit
         else:
             __log__.post(f"Parameter list for initialization must be a string or list, "
-                         f"got {param_list} ({tn(param_list)})", silent=False)  # always print 'ignored'
+                         f"got {ptinit} ({tn(ptinit)})", silent=False)  # always print 'ignored'
             return
-        __log__.post(f"Initializing parameters from {param_list}", silent=not self.ptverbose)
+        __log__.post(f"Initializing parameters from {ptinit}", silent=not self.ptverbose)
+        data.update(kwargs)
         self.ptsu(**data)
 
     def ptset(self, **kwargs):
@@ -234,7 +244,7 @@ class Parameters:
         """
         This is the only way to set internal parameters.  Other parameters are handled using ptadd.
 
-        The order is ptverbose, ptsetunits, ptnote, then others in order provided.
+        The order is ptverbose, ptsetunits, ptnote, ptinit then others in order provided.
 
         Parameters
         ----------
@@ -252,6 +262,9 @@ class Parameters:
         if 'ptnote' in kwargs:  # always allow ptnote to be set
             self.ptnote = kwargs.pop('ptnote')
             __log__.post(f"su: Setting internal parameter 'ptnote' to <{self.ptnote}>", silent=not self.ptverbose)
+        if 'ptinit' in kwargs:
+            ptinit = kwargs.pop('ptinit')
+            self.ptinit(ptinit=ptinit)
 
         for key, val in kwargs.items():
             if key in self._internal_only_ptdef:  # Internal method, so ignore.
