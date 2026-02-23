@@ -143,7 +143,7 @@ class Parameters:
         elif isinstance(ptinit, dict):
             data = ptinit
         else:
-            __log__.post(f"Parameter list for initialization must be a string or list, "
+            __log__.post(f"Parameter list for initialization must be a string, list, or dict -- "
                          f"got {ptinit} ({tn(ptinit)})", silent=False)  # always print 'ignored'
             return
         __log__.post(f"Initializing parameters from {ptinit}", silent=not self.ptverbose)
