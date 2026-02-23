@@ -17,7 +17,7 @@ __log__ = Log(__name__)
 class Parameters:
     """
     General parameter tracking class to handle groups of parameters as a class with some minor checking of
-    existence and of type.
+    existence and of type.  See README.md
 
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
@@ -33,18 +33,14 @@ class Parameters:
     ptsetunits = False
     _internal_pardict = {}
 
-    def __init__(self, ptnote='Parameter tracker class', ptinit=None,
+    def __init__(self, ptnote='Parameter tracking class', ptinit=None,
                  ptstrict=True, pterr=False, ptverbose=True, pttype=False, pttypeerr=False, ptsetunits=False,
                  **kwargs):
         """
         General parameter tracking class to keep track of groups of parameters within a class with
         some minor checking and viewing.
 
-        If used as a parent Class, then child Classes can define their own parameters in their __init__ methods
-        before calling the parent Class __init__ method.  If additional checking is needed for specific parameters,
-        then the child Class can override the 'ptset' method to do custom checking, then call the parent Class _pt_set
-        method to do the actual setting.  It is recommended to use super.__init__(...) in this case, but can also
-        use the method ptinit.
+        See README.md for details.
 
         Actions are tracked via the Log object.
         
@@ -95,9 +91,11 @@ class Parameters:
         return self.ptshow(return_only=True)
     
     def __ptaccess__ptu__(self):
+        """Allow a Class copy of the param_track_units Class -- generally for debugging."""
         self.ptu = __ptu__
 
     def __ptaccess__log__(self):
+        """Allow a Class copy of the Log class -- generally for debugging.  Use ptlog to view."""
         self.log = __log__
 
     def ptinit(self, ptinit=[], default=None, **kwargs):
@@ -125,6 +123,8 @@ class Parameters:
             from the file (e.g. for YAML files with multiple keys).  See README.md for file format.
         default : any
             Default value to set for each parameter (default is None), ignored if file is used
+        kwargs : key, value pairs
+            Initial parameters to set (if any)
 
         """
         if ptinit is None:
