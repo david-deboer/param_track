@@ -62,10 +62,10 @@ This is done in the standard way in your Class declaration.
 
 Inititalization my be done via essentially any setting method, but principally via one of these two:
 
-- `super.__init__(par='A Parameter)`  # note that `ptstrict` gets set to True as default.
+- `super.__init__(par='A Parameter, **kwargs)`  # note that `ptstrict` gets set to True as default.  This assumes the Child class `__init__` has `**kwargs` in it.
 - `self.ptinit(ptstrict=True, ptinit=['A', 'B', 'C'], par='A Parameter')`
 
-Both may be used, but may get confusing.  The structure of those two differ slightly to allow `ptinit` to initialize a list of parameters to a default value (which defaults to None).  Basically, pick an approach and stick with it.  Also note that `ptinit` is a method, but also used as an intra-method variable.
+Initialization uses `ptsu`. The structure of those two differ slightly to allow `ptinit` to initialize a list of parameters to a default value (which defaults to None).  Basically, pick an approach and stick with it.  Also note that `ptinit` is a method, but also used as an intra-method variable.
 
 After initialization, one should generally use `ptset` to interact with the parameters, or create a new wrapper to set.  Note that `ptset` is just a wrapper around `_pt_set` and one may wish to write a more comprehensive checker/wrapper that gets called and then it calls `_pt_set`.  This could be called `ptset`, but could also just be `set` or `update`...
 
