@@ -79,9 +79,26 @@ class Parameters:
         self.__log__.post(f"Parameters tracking: {ptnote}.", silent=True)
         self.ptsu(ptnote=ptnote, ptinit=ptinit, ptstrict=ptstrict, pterr=pterr, ptverbose=ptverbose,
                   pttype=pttype, pttypeerr=pttypeerr, ptsetunits=ptsetunits, **kwargs)
+        self._pt_is_initialized = True
 
     def __repr__(self):
         return self.ptshow(return_only=True)
+
+    def _pt_check_init(self):
+        if hasattr(self, '_pt_is_initialized') and self._pt_is_initialized:
+            return
+        for chk in self._internal_only_ptvar:
+            if not hasattr(self, chk):
+                if chk == 'ptnote':
+                    val = 'Uninitialized Parameter Tracking'
+                elif chk == 'ptverbose':
+                    val = True
+                elif chk == '_internal_pardict':
+                    self._internal_pardict = {}
+                else:
+                    val = False
+                setattr(self, chk, val)
+        self._pt_is_initialized = True       
 
     def ptinit(self, ptinit=[], default=None, **kwargs):
         """
@@ -112,6 +129,7 @@ class Parameters:
             Initial parameters to set (if any)
 
         """
+        self._pt_check_init()
         if ptinit is None:
             return
         if isinstance(ptinit, str):
@@ -174,6 +192,7 @@ class Parameters:
             if ptstrict is False, the value and type are set
 
         """
+        self._pt_check_init()
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:
                 self.__log__.post(f"Attempt to set internal parameter/method '{key}' -- ignored, try method 'ptsu'.", silent=False)  # always print 'ignored'
@@ -216,6 +235,7 @@ class Parameters:
             Parameters to add/replace
 
         """
+        self._pt_check_init()
         for key, val in kwargs.items():
             if key in self._internal_only_ptvar or key in self._internal_only_ptdef:  # Internal only, so ignore.
                 self.__log__.post(f"Attempt to modify internal parameter/method '{key}' -- ignored, try 'ptsu'.", silent=False)  # always print 'ignored'
@@ -237,6 +257,7 @@ class Parameters:
             Parameters to set in superuser mode
 
         """
+        self._pt_check_init()
         if 'ptverbose' in kwargs:
             self.ptverbose = bool(kwargs.pop('ptverbose'))
             self.__log__.post(f"su: Setting internal parameter 'ptverbose' to <{self.ptverbose}>", silent=not self.ptverbose)
@@ -364,16 +385,16 @@ class Parameters:
         if action == 'show':
             self.__log__.show(search=search)
             print('===')
-            self.__ptu__.log.show(search=search)
+            self.__ptu__.__log__.show(search=search)
         elif action == 'clear':
             self.__log__.log = []
-            self.__ptu__.log.log = []
+            self.__ptu__.__log__.log = []
         elif action == 'dump':
             self.__log__.post("Dumping log to 'param_track_log.txt'/'param_track_units_log.txt'", silent=False)
             with open('param_track_log.txt', 'w') as fp:
                 self.__log__.show(file=fp, search=search)
             with open('param_track_units_log.txt', 'w') as fp:
-                self.__ptu__.log.show(file=fp, search=search)
+                self.__ptu__.__log__.log.show(file=fp, search=search)
         else:
             self.__log__.post(f"Unknown 'ptlog' action '{action}'.", silent=False)
 
