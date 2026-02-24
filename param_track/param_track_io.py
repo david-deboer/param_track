@@ -7,7 +7,8 @@ def to_file(data, filename, include_par=None, as_row=False):
         _to_json_yaml(data=data, filename=filename, include_par=include_par)
     elif filename.endswith('.npz') or filename.endswith('.npy'):
         _to_npz(data=data, filename=filename, include_par=include_par)
-    raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
+    else:
+        raise ParameterTrackError(f"Unsupported file format for parameter loading: {filename}")
 
 def _to_npz(data, filename, include_par=None):
     this = data.pt_to_dict(serialize='pickle', include_par=include_par, what_to_dict='parameters')
