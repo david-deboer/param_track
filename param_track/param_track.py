@@ -470,7 +470,6 @@ class Parameters:
             and first line is header (works since row 0 is header)
 
         """
-        print("GOT TO PTFROM")
         from param_track.param_track_io import from_file
         self.__log__.post(f"{'Adding' if use_option == 'add' else 'Setting'} parameters from {filename}{' with key ' + use_key if use_key else ''}", silent=not self.ptverbose)
         if as_row:
