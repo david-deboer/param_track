@@ -144,6 +144,7 @@ class Parameters:
                 self.ptfrom(inp[0], use_key=use_key, use_option='su', as_row=False)
                 return
             else:
+               self.__log__.post(f"Processing {ptinit} as a csv-list", silent=False)  # To forestall confusion of not finding a file...
                data = {x.strip(): default for x in ptinit.split(',')}
         elif isinstance(ptinit, list):
             data = {key: default for key in ptinit}
@@ -469,6 +470,7 @@ class Parameters:
             and first line is header (works since row 0 is header)
 
         """
+        print("GOT TO PTFROM")
         from param_track.param_track_io import from_file
         self.__log__.post(f"{'Adding' if use_option == 'add' else 'Setting'} parameters from {filename}{' with key ' + use_key if use_key else ''}", silent=not self.ptverbose)
         if as_row:
