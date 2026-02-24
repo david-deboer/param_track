@@ -85,6 +85,10 @@ class Parameters:
         return self.ptshow(return_only=True)
 
     def _pt_check_init(self):
+        """
+        This kluge makes it so that you don't have to run super().__init__() when used as a Parent.
+        
+        """
         if hasattr(self, '_pt_is_initialized') and self._pt_is_initialized:
             return
         for chk in self._internal_only_ptvar:
