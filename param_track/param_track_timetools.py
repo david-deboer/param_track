@@ -163,6 +163,37 @@ def interpret_date(iddate, fmt='Time', NoneReturn=None):
         iddate = iddate.jd
     return iddate
 
+def wait(target, verbose=True):
+    """
+    Pauses execution until the specified target time or length
+
+    Parameters
+    ----------
+    target : interpret_date
+        Target to wait for or until
+
+    """
+    from time import sleep
+    now = interpret_date('now', fmt='Time')
+    if isinstance(target, (float, int)):
+        remaining_time = target
+    elif isinstance(target, timedelta):
+        remaining_time = target.total_seconds()
+    elif isinstance(target, TimeDelta):
+        remaining_time = target.to('second').value
+    else:
+        target = interpret_date(target, fmt='Time')
+        if target <= now:
+            print("Target time is in the past -- returning None")
+            return
+        remaining_time = (target - now).to('second').value
+
+    # Sleep for the remaining time
+    if verbose:
+        target_time = now + TimeDelta(remaining_time, format='sec')
+        print(f"Waiting for {remaining_time:.2f} seconds  (until {target_time})")
+    sleep(remaining_time)
+    return remaining_time
 
 #######################################OBSNERD
 TIME_FORMATS = ['%Y-%m-%dT%H:%M', '%y-%m-%dT%H:%M',
