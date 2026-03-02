@@ -18,8 +18,8 @@ class Parameters:
     """
     _internal_only_ptvar = {'ptnote', 'ptstrict', 'pterr', 'ptverbose', 'pttype', 'pttypeerr', 'ptsetunits',
                             '_internal_pardict'}
-    _internal_only_ptdef = {'ptset', '_pt_set', 'ptinit', 'ptadd', 'ptsu', 'ptfrom',
-                            'ptget', 'ptdel', 'ptshow', 'ptlog', 'ptto', 'pt_to_dict',
+    _internal_only_ptdef = {'ptset', '_pt_set', 'ptinit', 'ptadd', 'ptsu', 'ptfrom', 'ptget', 'ptdel',
+                            'ptexist', 'ptshow', 'ptlog', 'ptto', 'pt_to_dict',
                             '__ptu__', '__log__'}
 
 
@@ -64,6 +64,7 @@ class Parameters:
         ptfrom : set parameters from a file (CSV, JSON or YAML formats supported, set by filename extension)
         ptget : get parameter value
         ptdel : delete parameters
+        ptexist : return T/F whether the parameter is already included
         ptsu : set parameters silently and can change internal parameters
         ptshow : show current parameters being tracked
         ptlog : show or return the Log object
@@ -103,6 +104,9 @@ class Parameters:
                     val = False
                 setattr(self, chk, val)
         self._pt_is_initialized = True       
+
+    def ptexists(self, key):
+        return key in self._internal_pardict.keys()
 
     def ptinit(self, ptinit=[], default=None, **kwargs):
         """
