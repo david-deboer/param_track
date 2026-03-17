@@ -1,5 +1,5 @@
 [build-system]
-requires = ['setuptools']
+requires = ["setuptools>=61", "wheel"]
 build-backend = 'setuptools.build_meta'
 
 [project]
@@ -10,5 +10,6 @@ keywords = ["Parameters"]
 license = "MIT"
 readme = "README.md"
 
-[tools.setuptools.packages.find]
+[tool.setuptools.packages.find]
 where = ["."]
+include = ["param_track*"]
