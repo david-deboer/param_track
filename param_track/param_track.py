@@ -48,6 +48,8 @@ class Parameters:
             Flag to make parameter setting raise ParameterTrackError on unknown parameters in strict mode
         ptverbose : bool
             Flag to make parameter setting verbose
+        _pt_silent : bool
+            Override 
         pttype : bool
             Flag to check parameter reset type -- only used in ptset and only writes to log.
             Checks relative to the initial type set or when ptadd/ptsu was used.
@@ -274,6 +276,9 @@ class Parameters:
         if 'ptverbose' in kwargs:
             self.ptverbose = bool(kwargs.pop('ptverbose'))
             self.__log__.post(f"su: Setting internal parameter 'ptverbose' to <{self.ptverbose}>", silent=not self.ptverbose)
+        if '_pt_silent' in kwargs:
+            self._pt_silent = kwargs.pop('_pt_silent')
+            self.__log__.post(f"su: Setting internal parameter '_pt_silent' to <{self._pt_silent}>", silent=not self.ptverbose)
         if 'ptsetunits' in kwargs:
             self.__ptu__.handle_units(kwargs.pop('ptsetunits'))
             self.ptsetunits = self.__ptu__.use_units
