@@ -163,6 +163,9 @@ def dictify(x):
         except Exception:
             pass
         x = listify(x)
-        x = {k: v for k, v in [item.split(':', 1) for item in x if ':' in item]}
+        try:
+            return {k: v for k, v in [item.split(':', 1) for item in x if ':' in item]}
+        except Exception:
+            pass
 
     raise ValueError(f"Cannot convert {x} to dict.")
