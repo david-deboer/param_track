@@ -144,3 +144,25 @@ def listify(x, d={}, sep=',', NoneReturn=[], dtype=None):
         return [dtype(z) for z in this]
     except Exception:
         return this
+    
+def dictify(x):
+    """Convert input to dict in creative ways."""
+    if x is None:
+        return {}
+    if isinstance(x, dict):
+        return x
+    if isinstance(x, str):
+        try:
+            import json
+            return json.loads(x)
+        except Exception:
+            pass
+        try:
+            import yaml
+            return yaml.safe_load(x)
+        except Exception:
+            pass
+        x = listify(x)
+        x = {k: v for k, v in [item.split(':', 1) for item in x if ':' in item]}
+
+    raise ValueError(f"Cannot convert {x} to dict.")
