@@ -152,16 +152,16 @@ def dictify(x):
     if isinstance(x, dict):
         return x
     if isinstance(x, str):
-        try:
-            import json
-            return json.loads(x)
-        except Exception:
-            pass
-        try:
-            import yaml
-            return yaml.safe_load(x)
-        except Exception:
-            pass
+        # try:
+        #     import json
+        #     return json.loads(x)
+        # except Exception:
+        #     pass
+        # try:
+        #     import yaml
+        #     return yaml.safe_load(x)
+        # except Exception:
+        #     pass
         x = listify(x)
         try:
             return {k: v for k, v in [item.split(':', 1) for item in x if ':' in item]}
